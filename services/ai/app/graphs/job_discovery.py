@@ -19,3 +19,31 @@ model = ChatGroq(
 )
 
 intent_model = model.with_structured_output(JobSearchIntent)
+
+def interpret_search_query(
+    state: JobDiscoveryState,
+) -> dict:
+    prompt = f"""
+    You extract structured job-search requirements for JobPilot.AI.
+
+    The platform currently searches jobs across India.
+
+    Interpret the user's request.
+
+    Rules:
+    - Do not invent locations.
+    - If no location is provided, use ["India"].
+    - If job type is not specified, use "any".
+    - If freshness is not specified, use 7 days.
+    - Remote jobs are allowed only when the user explicitly requests
+    remote jobs or says remote jobs are acceptable.
+
+    User request:
+    {state["user_query"]}
+    """
+
+    intent = intent_model.invoke(prompt)
+
+    return {
+        "search_intent": intent,
+    }
