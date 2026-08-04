@@ -47,3 +47,22 @@ def interpret_search_query(
     return {
         "search_intent": intent,
     }
+
+builder = StateGraph(JobDiscoveryState)
+
+builder.add_node(
+    "interpret_search_query",
+    interpret_search_query,
+)
+
+builder.add_edge(
+    START,
+    "interpret_search_query",
+)
+
+builder.add_edge(
+    "interpret_search_query",
+    END,
+)
+
+job_discovery_graph = builder.compile()
