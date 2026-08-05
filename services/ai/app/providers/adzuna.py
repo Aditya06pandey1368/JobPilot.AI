@@ -1,11 +1,13 @@
 import httpx
 
 from app.core.config import settings
+from app.schemas.job import Job
 from app.schemas.job_search import JobSearchIntent
 
 
-async def search_adzuna_jobs(intent: JobSearchIntent) -> list[dict]:
+async def search_adzuna_jobs(intent: JobSearchIntent) -> list[Job]:
     url = "https://api.adzuna.com/v1/api/jobs/in/search/1"
+
     search_terms = " ".join(intent.roles)
 
     if intent.job_type == "internship":
@@ -32,4 +34,26 @@ async def search_adzuna_jobs(intent: JobSearchIntent) -> list[dict]:
 
     data = response.json()
 
-    return data.get("results", [])
+    return [
+        normalize_adzuna_job(job)
+        for job in data.get("results", [])
+    ]
+
+
+def normalize_adzuna_job(raw: dict) -> Job:
+    return Job(
+        external_id=str(raw["id"]),
+        source="adzuna",
+        title=raw.get("title", ""),
+        company=raw.get("company", {}).get(
+            "display_name", "Unknown"
+        ),
+        location=raw.get("location", {}).get(
+            "display_name", "India"
+        ),
+        description=raw.get("description"),
+        posted_at=raw.get("created"),
+        updated_at=None,
+        apply_url=raw.get("redirect_url", ""),
+        source_url=raw.get("redirect_url"),
+    )
