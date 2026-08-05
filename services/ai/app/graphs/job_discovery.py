@@ -10,6 +10,7 @@ from app.schemas.job_search import JobSearchIntent
 class JobDiscoveryState(TypedDict):
     user_query: str
     search_intent: JobSearchIntent | None
+    raw_jobs: list[dict]
 
 
 model = ChatGroq(
