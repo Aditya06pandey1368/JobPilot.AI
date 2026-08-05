@@ -5,6 +5,7 @@ from langgraph.graph import END, START, StateGraph
 
 from app.core.config import settings
 from app.schemas.job_search import JobSearchIntent
+from app.providers.adzuna import search_adzuna_jobs
 
 
 class JobDiscoveryState(TypedDict):
@@ -47,6 +48,21 @@ def interpret_search_query(
 
     return {
         "search_intent": intent,
+    }
+
+async def search_jobs(
+    state: JobDiscoveryState,
+) -> dict:
+
+    intent = state["search_intent"]
+
+    if intent is None:
+        return {"raw_jobs": []}
+
+    jobs = await search_adzuna_jobs(intent)
+
+    return {
+        "raw_jobs": jobs,
     }
 
 builder = StateGraph(JobDiscoveryState)
