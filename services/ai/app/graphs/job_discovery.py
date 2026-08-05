@@ -72,6 +72,11 @@ builder.add_node(
     interpret_search_query,
 )
 
+builder.add_node(
+    "search_jobs",
+    search_jobs,
+)
+
 builder.add_edge(
     START,
     "interpret_search_query",
@@ -79,6 +84,11 @@ builder.add_edge(
 
 builder.add_edge(
     "interpret_search_query",
+    "search_jobs",
+)
+
+builder.add_edge(
+    "search_jobs",
     END,
 )
 
