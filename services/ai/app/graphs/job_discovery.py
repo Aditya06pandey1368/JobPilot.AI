@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.schemas.job_search import JobSearchIntent
 from app.providers.adzuna import search_adzuna_jobs
 from app.schemas.job import Job
+from app.providers.greenhouse import search_greenhouse_jobs
 
 
 class JobDiscoveryState(TypedDict):
@@ -70,6 +71,34 @@ async def search_adzuna(
         "adzuna_jobs": jobs,
     }
 
+async def search_greenhouse(
+    state: JobDiscoveryState,
+) -> dict:
+
+    intent = state["search_intent"]
+
+    if intent is None:
+        return {"greenhouse_jobs": []}
+
+    jobs = await search_greenhouse_jobs(intent)
+
+    return {
+        "greenhouse_jobs": jobs,
+    }
+
+def merge_jobs(
+    state: JobDiscoveryState,
+) -> dict:
+
+    jobs = (
+        state["adzuna_jobs"]
+        + state["greenhouse_jobs"]
+    )
+
+    return {
+        "jobs": jobs,
+    }
+
 builder = StateGraph(JobDiscoveryState)
 
 builder.add_node(
@@ -78,22 +107,50 @@ builder.add_node(
 )
 
 builder.add_node(
-    "search_jobs",
-    search_jobs,
+    "search_adzuna",
+    search_adzuna,
 )
+
+builder.add_node(
+    "search_greenhouse",
+    search_greenhouse,
+)
+
+builder.add_node(
+    "merge_jobs",
+    merge_jobs,
+)
+
 
 builder.add_edge(
     START,
     "interpret_search_query",
 )
 
+# FAN OUT
 builder.add_edge(
     "interpret_search_query",
-    "search_jobs",
+    "search_adzuna",
 )
 
 builder.add_edge(
-    "search_jobs",
+    "interpret_search_query",
+    "search_greenhouse",
+)
+
+# FAN IN
+builder.add_edge(
+    "search_adzuna",
+    "merge_jobs",
+)
+
+builder.add_edge(
+    "search_greenhouse",
+    "merge_jobs",
+)
+
+builder.add_edge(
+    "merge_jobs",
     END,
 )
 

@@ -1,6 +1,7 @@
 import httpx
-
+import asyncio
 from app.schemas.job import Job
+from services.ai.app.schemas.job_search import JobSearchIntent
 
 
 async def fetch_greenhouse_board(
@@ -44,3 +45,38 @@ async def fetch_greenhouse_board(
         )
 
     return jobs
+
+async def search_greenhouse_jobs(
+    intent: JobSearchIntent,
+) -> list[Job]:
+
+    tasks = [
+        fetch_greenhouse_board(
+            board_token=board_token,
+            company_name=company,
+        )
+        for company, board_token
+        in GREENHOUSE_BOARDS.items()
+    ]
+
+    results = await asyncio.gather(
+        *tasks,
+        return_exceptions=True,
+    )
+
+    jobs: list[Job] = []
+
+    for result in results:
+        if isinstance(result, Exception):
+            continue
+
+        jobs.extend(result)
+
+    return jobs
+
+GREENHOUSE_BOARDS = {
+    "6sense": "6sense",
+    "Zinnia": "zinnia",
+    "Tide": "tide",
+    "Turing": "turing",
+}
