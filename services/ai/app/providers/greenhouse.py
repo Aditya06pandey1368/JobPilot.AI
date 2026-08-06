@@ -1,7 +1,7 @@
 import httpx
 import asyncio
 from app.schemas.job import Job
-from services.ai.app.schemas.job_search import JobSearchIntent
+from app.schemas.job_search import JobSearchIntent
 
 
 async def fetch_greenhouse_board(
