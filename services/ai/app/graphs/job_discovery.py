@@ -18,6 +18,7 @@ class JobDiscoveryState(TypedDict):
     greenhouse_jobs: list[Job]
 
     jobs: list[Job]
+    filtered_jobs: list[Job]
 
 
 model = ChatGroq(
@@ -98,6 +99,8 @@ def merge_jobs(
     return {
         "jobs": jobs,
     }
+
+
 
 builder = StateGraph(JobDiscoveryState)
 
