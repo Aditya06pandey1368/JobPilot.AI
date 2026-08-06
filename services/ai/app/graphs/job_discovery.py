@@ -55,19 +55,19 @@ def interpret_search_query(
         "search_intent": intent,
     }
 
-async def search_jobs(
+async def search_adzuna(
     state: JobDiscoveryState,
 ) -> dict:
 
     intent = state["search_intent"]
 
     if intent is None:
-        return {"raw_jobs": []}
+        return {"adzuna_jobs": []}
 
     jobs = await search_adzuna_jobs(intent)
 
     return {
-        "raw_jobs": jobs,
+        "adzuna_jobs": jobs,
     }
 
 builder = StateGraph(JobDiscoveryState)
