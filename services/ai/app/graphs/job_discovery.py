@@ -6,12 +6,17 @@ from langgraph.graph import END, START, StateGraph
 from app.core.config import settings
 from app.schemas.job_search import JobSearchIntent
 from app.providers.adzuna import search_adzuna_jobs
+from app.schemas.job import Job
 
 
 class JobDiscoveryState(TypedDict):
     user_query: str
     search_intent: JobSearchIntent | None
-    raw_jobs: list[dict]
+
+    adzuna_jobs: list[Job]
+    greenhouse_jobs: list[Job]
+
+    jobs: list[Job]
 
 
 model = ChatGroq(
