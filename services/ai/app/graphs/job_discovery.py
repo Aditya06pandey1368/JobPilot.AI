@@ -8,6 +8,7 @@ from app.schemas.job_search import JobSearchIntent
 from app.providers.adzuna import search_adzuna_jobs
 from app.schemas.job import Job
 from app.providers.greenhouse import search_greenhouse_jobs
+from app.services.job_filter import filter_jobs
 
 
 class JobDiscoveryState(TypedDict):
@@ -100,6 +101,25 @@ def merge_jobs(
         "jobs": jobs,
     }
 
+def filter_discovered_jobs(
+    state: JobDiscoveryState,
+) -> dict:
+
+    intent = state["search_intent"]
+
+    if intent is None:
+        return {
+            "filtered_jobs": []
+        }
+
+    filtered = filter_jobs(
+        state["jobs"],
+        intent,
+    )
+
+    return {
+        "filtered_jobs": filtered,
+    }
 
 
 builder = StateGraph(JobDiscoveryState)
@@ -122,6 +142,11 @@ builder.add_node(
 builder.add_node(
     "merge_jobs",
     merge_jobs,
+)
+
+builder.add_node(
+    "filter_jobs",
+    filter_discovered_jobs,
 )
 
 
@@ -154,6 +179,11 @@ builder.add_edge(
 
 builder.add_edge(
     "merge_jobs",
+    "filter_jobs",
+)
+
+builder.add_edge(
+    "filter_jobs",
     END,
 )
 
