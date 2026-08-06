@@ -9,6 +9,8 @@ from app.providers.adzuna import search_adzuna_jobs
 from app.schemas.job import Job
 from app.providers.greenhouse import search_greenhouse_jobs
 from app.services.job_filter import filter_jobs
+from app.schemas.job_relevance import AnalyzedJob
+from app.services.job_relevance import analyze_job_relevance
 
 
 class JobDiscoveryState(TypedDict):
@@ -20,6 +22,8 @@ class JobDiscoveryState(TypedDict):
 
     jobs: list[Job]
     filtered_jobs: list[Job]
+
+    relevant_jobs: list[AnalyzedJob]
 
 
 model = ChatGroq(
@@ -121,6 +125,25 @@ def filter_discovered_jobs(
         "filtered_jobs": filtered,
     }
 
+def analyze_relevance(
+    state: JobDiscoveryState,
+) -> dict:
+
+    intent = state["search_intent"]
+
+    if intent is None:
+        return {
+            "relevant_jobs": []
+        }
+
+    relevant_jobs = analyze_job_relevance(
+        state["filtered_jobs"],
+        intent,
+    )
+
+    return {
+        "relevant_jobs": relevant_jobs
+    }
 
 builder = StateGraph(JobDiscoveryState)
 
@@ -148,6 +171,13 @@ builder.add_node(
     "filter_jobs",
     filter_discovered_jobs,
 )
+
+builder.add_node(
+    "analyze_relevance",
+    analyze_relevance,
+)
+
+#EDGES
 
 
 builder.add_edge(
@@ -184,6 +214,11 @@ builder.add_edge(
 
 builder.add_edge(
     "filter_jobs",
+    "analyze_relevance",
+)
+
+builder.add_edge(
+    "analyze_relevance",
     END,
 )
 
