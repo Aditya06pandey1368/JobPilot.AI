@@ -12,3 +12,5 @@ class CompanyState(TypedDict):
     evidence: CompanyEvidence | None
 
     report: TrustReport | None
+
+    retry_count: int

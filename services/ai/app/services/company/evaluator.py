@@ -16,4 +16,7 @@ def has_enough_evidence(
     if evidence.careers_page:
         score += 1
 
-    return score >= 2
+    if len(evidence.evidence_items) >= 5:
+        score += 1
+
+    return score >= 3
