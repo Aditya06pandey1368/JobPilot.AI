@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CompanyEvidence(BaseModel):
@@ -7,14 +7,12 @@ class CompanyEvidence(BaseModel):
 
     official_website: str | None = None
 
-    careers_page: str | None = None
-
     linkedin_url: str | None = None
 
-    news: list[str] = []
+    careers_page: str | None = None
 
-    reddit: list[str] = []
+    news: list[str] = Field(default_factory=list)
 
-    glassdoor: list[str] = []
+    reddit: list[str] = Field(default_factory=list)
 
-    missing_information: list[str] = []
+    glassdoor: list[str] = Field(default_factory=list)
