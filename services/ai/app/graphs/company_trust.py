@@ -11,6 +11,9 @@ from app.services.company.linkedin import find_linkedin
 from app.services.company.careers import (
     find_careers_page,
 )
+from app.services.company.analyzer import (
+    analyze_company,
+)
 
 def collect_evidence(
     state: CompanyState,
@@ -60,6 +63,18 @@ def collect_careers(
         "evidence": evidence
     }
 
+def analyze_company_node(
+    state: CompanyState,
+):
+
+    report = analyze_company(
+        state["evidence"],
+    )
+
+    return {
+        "report": report
+    }
+
 builder = StateGraph(CompanyState)
 
 builder.add_node(
@@ -80,6 +95,11 @@ builder.add_node(
 builder.add_node(
     "collect_careers",
     collect_careers,
+)
+
+builder.add_node(
+    "analyze_company",
+    analyze_company_node,
 )
 
 builder.add_edge(
@@ -104,6 +124,11 @@ builder.add_edge(
 
 builder.add_edge(
     "collect_careers",
+    "analyze_company",
+)
+
+builder.add_edge(
+    "analyze_company",
     END,
 )
 
