@@ -1,7 +1,8 @@
 from tavily import TavilyClient
 
 from app.core.config import settings
-from app.schemas.company_evidence import SearchResult
+from app.schemas.evidence import EvidenceItem
+from app.schemas.evidence_source import EvidenceSource
 
 
 client = TavilyClient(
@@ -11,24 +12,30 @@ client = TavilyClient(
 
 def search_company(
     company: str,
-) -> list[SearchResult]:
+) -> list[EvidenceItem]:
 
     response = client.search(
-        query=f"{company} company official website linkedin careers",
+        query=f"{company} official website linkedin careers",
         search_depth="advanced",
         max_results=8,
     )
 
-    results = []
+    evidence = []
 
     for item in response["results"]:
 
-        results.append(
-            SearchResult(
+        evidence.append(
+            EvidenceItem(
+                source=EvidenceSource.SEARCH,
+
                 title=item["title"],
+
                 url=item["url"],
-                content=item["content"],
+
+                snippet=item["content"],
+
+                confidence=0.8,
             )
         )
 
-    return results
+    return evidence

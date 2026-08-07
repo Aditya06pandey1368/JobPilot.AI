@@ -11,7 +11,7 @@ def collect_company_evidence(
         company_name=job.company,
     )
 
-    evidence.search_results = search_company(
+    evidence.evidence_items = search_company(
         job.company,
     )
 

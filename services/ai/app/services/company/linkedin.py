@@ -1,17 +1,18 @@
 from app.schemas.company_evidence import CompanyEvidence
-
+from app.schemas.evidence_source import EvidenceSource
 
 def find_linkedin(
     evidence: CompanyEvidence,
 ) -> CompanyEvidence:
 
-    for result in evidence.search_results:
+    for item in evidence.evidence_items:
 
-        url = result.url.lower()
+        if "linkedin.com/company/" in item.url.lower():
 
-        if "linkedin.com/company/" in url:
+            evidence.linkedin_url = item.url
 
-            evidence.linkedin_url = result.url
+            item.source = EvidenceSource.LINKEDIN
+
             break
 
     return evidence
