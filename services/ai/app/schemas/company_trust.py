@@ -1,6 +1,25 @@
 from pydantic import BaseModel, Field
 
 
+class TrustBreakdown(BaseModel):
+
+    website_score: int = Field(ge=0, le=25)
+
+    linkedin_score: int = Field(ge=0, le=20)
+
+    careers_score: int = Field(ge=0, le=20)
+
+    public_presence_score: int = Field(
+        ge=0,
+        le=20,
+    )
+
+    evidence_quality_score: int = Field(
+        ge=0,
+        le=15,
+    )
+
+
 class TrustReport(BaseModel):
 
     trust_score: int = Field(
@@ -12,6 +31,8 @@ class TrustReport(BaseModel):
         ge=0,
         le=100,
     )
+
+    breakdown: TrustBreakdown
 
     recommendation: str
 
