@@ -1,19 +1,18 @@
 from typing import TypedDict
 
 from langchain_groq import ChatGroq
-from langgraph.graph import END, START, StateGraph
+from langgraph.graph import START, END, StateGraph
 
 from app.core.config import settings
 from app.schemas.job_search import JobSearchIntent
-from app.providers.adzuna import search_adzuna_jobs
 from app.schemas.job import Job
-from app.providers.greenhouse import search_greenhouse_jobs
-from app.services.job_filter import filter_jobs
 from app.schemas.job_relevance import AnalyzedJob
-from app.services.job_relevance import analyze_job_relevance
+from app.graphs.job_discovery_subgraph import (
+    job_discovery_subgraph,
+)
 
 
-class JobDiscoveryState(TypedDict):
+class JobSearchState(TypedDict):
     user_query: str
     search_intent: JobSearchIntent | None
 
@@ -24,6 +23,7 @@ class JobDiscoveryState(TypedDict):
     filtered_jobs: list[Job]
 
     relevant_jobs: list[AnalyzedJob]
+    unique_jobs: list[AnalyzedJob]
 
 
 model = ChatGroq(
@@ -34,118 +34,33 @@ model = ChatGroq(
 
 intent_model = model.with_structured_output(JobSearchIntent)
 
-def interpret_search_query(
-    state: JobDiscoveryState,
-) -> dict:
+
+def interpret_search_query(state: JobSearchState):
+
     prompt = f"""
-    You extract structured job-search requirements for JobPilot.AI.
+You extract structured job-search requirements for JobPilot.AI.
 
-    The platform currently searches jobs across India.
+The platform currently searches jobs across India.
 
-    Interpret the user's request.
+Rules:
+- Do not invent locations.
+- If no location is provided, use ["India"].
+- If job type is not specified, use "any".
+- If freshness is not specified, use 7 days.
+- Remote jobs are allowed only when the user explicitly requests remote jobs.
 
-    Rules:
-    - Do not invent locations.
-    - If no location is provided, use ["India"].
-    - If job type is not specified, use "any".
-    - If freshness is not specified, use 7 days.
-    - Remote jobs are allowed only when the user explicitly requests
-    remote jobs or says remote jobs are acceptable.
-
-    User request:
-    {state["user_query"]}
-    """
+User request:
+{state["user_query"]}
+"""
 
     intent = intent_model.invoke(prompt)
 
     return {
-        "search_intent": intent,
+        "search_intent": intent
     }
 
-async def search_adzuna(
-    state: JobDiscoveryState,
-) -> dict:
 
-    intent = state["search_intent"]
-
-    if intent is None:
-        return {"adzuna_jobs": []}
-
-    jobs = await search_adzuna_jobs(intent)
-
-    return {
-        "adzuna_jobs": jobs,
-    }
-
-async def search_greenhouse(
-    state: JobDiscoveryState,
-) -> dict:
-
-    intent = state["search_intent"]
-
-    if intent is None:
-        return {"greenhouse_jobs": []}
-
-    jobs = await search_greenhouse_jobs(intent)
-
-    return {
-        "greenhouse_jobs": jobs,
-    }
-
-def merge_jobs(
-    state: JobDiscoveryState,
-) -> dict:
-
-    jobs = (
-        state["adzuna_jobs"]
-        + state["greenhouse_jobs"]
-    )
-
-    return {
-        "jobs": jobs,
-    }
-
-def filter_discovered_jobs(
-    state: JobDiscoveryState,
-) -> dict:
-
-    intent = state["search_intent"]
-
-    if intent is None:
-        return {
-            "filtered_jobs": []
-        }
-
-    filtered = filter_jobs(
-        state["jobs"],
-        intent,
-    )
-
-    return {
-        "filtered_jobs": filtered,
-    }
-
-def analyze_relevance(
-    state: JobDiscoveryState,
-) -> dict:
-
-    intent = state["search_intent"]
-
-    if intent is None:
-        return {
-            "relevant_jobs": []
-        }
-
-    relevant_jobs = analyze_job_relevance(
-        state["filtered_jobs"],
-        intent,
-    )
-
-    return {
-        "relevant_jobs": relevant_jobs
-    }
-
-builder = StateGraph(JobDiscoveryState)
+builder = StateGraph(JobSearchState)
 
 builder.add_node(
     "interpret_search_query",
@@ -153,72 +68,22 @@ builder.add_node(
 )
 
 builder.add_node(
-    "search_adzuna",
-    search_adzuna,
+    "discover_jobs",
+    job_discovery_subgraph,
 )
-
-builder.add_node(
-    "search_greenhouse",
-    search_greenhouse,
-)
-
-builder.add_node(
-    "merge_jobs",
-    merge_jobs,
-)
-
-builder.add_node(
-    "filter_jobs",
-    filter_discovered_jobs,
-)
-
-builder.add_node(
-    "analyze_relevance",
-    analyze_relevance,
-)
-
-#EDGES
-
 
 builder.add_edge(
     START,
     "interpret_search_query",
 )
 
-# FAN OUT
 builder.add_edge(
     "interpret_search_query",
-    "search_adzuna",
+    "discover_jobs",
 )
 
 builder.add_edge(
-    "interpret_search_query",
-    "search_greenhouse",
-)
-
-# FAN IN
-builder.add_edge(
-    "search_adzuna",
-    "merge_jobs",
-)
-
-builder.add_edge(
-    "search_greenhouse",
-    "merge_jobs",
-)
-
-builder.add_edge(
-    "merge_jobs",
-    "filter_jobs",
-)
-
-builder.add_edge(
-    "filter_jobs",
-    "analyze_relevance",
-)
-
-builder.add_edge(
-    "analyze_relevance",
+    "discover_jobs",
     END,
 )
 
