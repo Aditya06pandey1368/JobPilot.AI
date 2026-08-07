@@ -11,6 +11,7 @@ model = ChatGroq(
     temperature=0,
 )
 
+# This is REQUIRED
 trust_model = model.with_structured_output(
     TrustReport
 )
@@ -21,31 +22,51 @@ def analyze_company(
 ) -> TrustReport:
 
     prompt = f"""
-You are an expert company due-diligence AI.
+    ...
+    """
 
-Your job is to determine how trustworthy a company is based ONLY on the evidence provided.
+    return trust_model.invoke(prompt)
 
-Company Name:
+def analyze_company(
+    evidence: CompanyEvidence,
+) -> TrustReport:
+
+    prompt = f"""
+You are a senior cybersecurity analyst and company due-diligence expert.
+
+Your task is to evaluate how trustworthy a company is.
+
+Use ONLY the supplied evidence.
+
+Never invent facts.
+
+==================================================
+COMPANY
+==================================================
+
+Company:
 {evidence.company_name}
 
 Official Website:
 {evidence.official_website}
 
-Official LinkedIn:
+LinkedIn:
 {evidence.linkedin_url}
 
-Careers Page:
+Careers:
 {evidence.careers_page}
 
--------------------------
+==================================================
 COLLECTED EVIDENCE
--------------------------
+==================================================
+
 """
 
     for item in evidence.evidence_items:
 
         prompt += f"""
-Source: {item.source}
+Source:
+{item.source}
 
 Title:
 {item.title}
@@ -56,50 +77,107 @@ URL:
 Snippet:
 {item.snippet}
 
-------------------------------------
+--------------------------------------------------
+
 """
 
     prompt += """
-Evaluate the company objectively.
+Return a TrustReport.
 
-Return a valid TrustReport.
+The TrustReport MUST contain:
 
-Scoring Rules:
+trust_score
+
+confidence
+
+breakdown
+
+recommendation
+
+summary
+
+strengths
+
+red_flags
+
+reasoning
+
+==================================================
+BREAKDOWN
+==================================================
 
 Website Score (0-25)
-- Official company website
-- Correct domain
+
+Evaluate
+
+- Official company domain
 - Professional website
+- Company identity
+
+--------------------------------------------------
 
 LinkedIn Score (0-20)
-- Official LinkedIn company page
-- Company profile quality
+
+Evaluate
+
+- Official company page
+- Company information
+- Company size
+
+--------------------------------------------------
 
 Careers Score (0-20)
+
+Evaluate
+
 - Official careers page
-- Active hiring
-- Recruitment information
+- Hiring information
+- Recruitment transparency
+
+--------------------------------------------------
 
 Public Presence Score (0-20)
-- Company visibility
-- Public reputation
-- Company size
-- Industry presence
+
+Evaluate
+
+- Public visibility
+- Industry reputation
+- Online presence
+
+--------------------------------------------------
 
 Evidence Quality Score (0-15)
-- Amount of evidence
-- Consistency between sources
-- Reliability of evidence
 
-Important Rules:
+Evaluate
 
-- Never invent information.
-- Never assume missing information.
-- If evidence is missing, reduce confidence.
-- Mention every strength.
-- Mention every red flag.
-- Explain why each score was assigned.
-- The final trust_score must be based on all category scores.
+- Quantity of evidence
+- Reliability
+- Consistency
+- Confidence
+
+==================================================
+
+Rules
+
+1. Never guess.
+
+2. Missing evidence should reduce confidence.
+
+3. Explain every important strength.
+
+4. Explain every important red flag.
+
+5. The total trust_score must equal the sum of the five category scores.
+
+6. recommendation should be one of
+
+- Trusted
+- Mostly Trusted
+- Use Caution
+- Suspicious
+- High Risk
+
+7. Keep the reasoning concise but specific.
 """
 
     return trust_model.invoke(prompt)
