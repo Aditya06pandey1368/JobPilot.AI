@@ -1,7 +1,7 @@
 from app.schemas.company_evidence import CompanyEvidence
 
 
-def find_official_website(
+def find_linkedin(
     evidence: CompanyEvidence,
 ) -> CompanyEvidence:
 
@@ -9,13 +9,9 @@ def find_official_website(
 
         url = result.url.lower()
 
-        if "linkedin.com" in url:
-            continue
+        if "linkedin.com/company/" in url:
 
-        if "glassdoor.com" in url:
-            continue
-
-        evidence.official_website = result.url
-        return evidence
+            evidence.linkedin_url = result.url
+            break
 
     return evidence
