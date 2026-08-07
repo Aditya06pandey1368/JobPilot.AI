@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     groq_api_key: str
     adzuna_app_id: str
     adzuna_app_key: str
+    tavily_api_key: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -4,6 +4,9 @@ from app.schemas.company_state import CompanyState
 from app.services.company.collector import (
     collect_company_evidence,
 )
+from app.services.company.website import (
+    find_official_website,
+)
 
 def collect_evidence(
     state: CompanyState,
@@ -17,10 +20,28 @@ def collect_evidence(
         "evidence": evidence
     }
 
+def collect_website(
+    state: CompanyState,
+):
+
+    evidence = find_official_website(
+        state["evidence"],
+    )
+
+    return {
+        "evidence": evidence
+    }
+
 builder = StateGraph(CompanyState)
+
 builder.add_node(
     "collect_evidence",
     collect_evidence,
+)
+
+builder.add_node(
+    "collect_website",
+    collect_website,
 )
 
 builder.add_edge(
@@ -30,9 +51,12 @@ builder.add_edge(
 
 builder.add_edge(
     "collect_evidence",
-    END,
+    "collect_website",
 )
 
-
+builder.add_edge(
+    "collect_website",
+    END,
+)
 
 company_trust_graph = builder.compile()
