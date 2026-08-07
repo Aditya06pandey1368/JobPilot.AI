@@ -4,6 +4,11 @@ from app.core.config import settings
 from app.schemas.company_evidence import CompanyEvidence
 from app.schemas.company_trust import TrustReport
 
+from app.services.company.trust_calculator import (
+    calculate_confidence,
+    calculate_recommendation,
+    calculate_trust_score,
+)
 
 model = ChatGroq(
     model="llama-3.3-70b-versatile",
@@ -180,4 +185,19 @@ Rules
 7. Keep the reasoning concise but specific.
 """
 
-    return trust_model.invoke(prompt)
+    report = trust_model.invoke(prompt)
+
+    report = calculate_trust_score(
+        report,
+    )
+
+    report = calculate_recommendation(
+        report,
+    )
+
+    report = calculate_confidence(
+        report,
+        evidence,
+    )
+
+    return report
