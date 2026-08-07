@@ -37,3 +37,4 @@ htmlcov/
 # Build
 build/
 services/ai/test_graph.py
+services/ai/test_company.py
