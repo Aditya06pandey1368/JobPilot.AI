@@ -17,6 +17,12 @@ class TrustReport(BaseModel):
 
     summary: str
 
-    strengths: list[str] = Field(default_factory=list)
+    strengths: list[str] = Field(
+        default_factory=list
+    )
 
-    red_flags: list[str] = Field(default_factory=list)
+    red_flags: list[str] = Field(
+        default_factory=list
+    )
+
+    reasoning: str
