@@ -1,26 +1,51 @@
 from app.schemas.company_evidence import CompanyEvidence
-from app.schemas.evidence import EvidenceItem
-from app.schemas.evidence_source import EvidenceSource
+from app.services.company.url_utils import (
+    get_domain,
+    get_path,
+    is_bad_domain,
+)
 
 
 def find_official_website(
     evidence: CompanyEvidence,
-) -> CompanyEvidence:
+):
+
+    best_url = None
+
+    best_score = -1
+
+    company = (
+        evidence.company_name
+        .lower()
+        .replace(" ", "")
+    )
 
     for item in evidence.evidence_items:
 
-        url = item.url.lower()
-
-        if "linkedin.com" in url:
+        if is_bad_domain(item.url):
             continue
 
-        if "glassdoor.com" in url:
-            continue
+        score = 0
 
-        evidence.official_website = item.url
+        domain = get_domain(item.url)
 
-        item.source = EvidenceSource.WEBSITE
+        path = get_path(item.url)
 
-        return evidence
+        if company in domain.replace(".", ""):
+            score += 50
+
+        if path in ("", "/"):
+            score += 100
+
+        if len(path) < 15:
+            score += 10
+
+        if score > best_score:
+
+            best_score = score
+
+            best_url = item.url
+
+    evidence.official_website = best_url
 
     return evidence

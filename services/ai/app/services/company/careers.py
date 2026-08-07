@@ -1,32 +1,55 @@
 from app.schemas.company_evidence import CompanyEvidence
-from app.schemas.evidence_source import EvidenceSource
+from app.services.company.url_utils import (
+    get_domain,
+)
 
-CAREER_KEYWORDS = [
+
+KEYWORDS = (
     "career",
     "careers",
     "jobs",
-    "join-us",
-    "joinus",
-]
+)
 
 
 def find_careers_page(
     evidence: CompanyEvidence,
-) -> CompanyEvidence:
+):
+
+    if not evidence.official_website:
+        return evidence
+
+    official_domain = get_domain(
+        evidence.official_website
+    )
+
+    best = None
+
+    best_score = -1
 
     for item in evidence.evidence_items:
 
         url = item.url.lower()
 
-        if any(
-            keyword in url
-            for keyword in CAREER_KEYWORDS
-        ):
+        score = 0
 
-            evidence.careers_page = item.url
+        if get_domain(url) == official_domain:
+            score += 100
 
-            item.source = EvidenceSource.CAREERS
+        if "career" in url:
+            score += 60
 
-            break
+        if "jobs" in url:
+            score += 40
+
+        if "linkedin.com" in url:
+            score -= 200
+
+        if score > best_score:
+
+            best_score = score
+
+            best = item.url
+
+    evidence.careers_page = best
 
     return evidence

@@ -1,18 +1,38 @@
 from app.schemas.company_evidence import CompanyEvidence
-from app.schemas.evidence_source import EvidenceSource
+
 
 def find_linkedin(
     evidence: CompanyEvidence,
-) -> CompanyEvidence:
+):
+
+    best = None
+
+    score = -1
 
     for item in evidence.evidence_items:
 
-        if "linkedin.com/company/" in item.url.lower():
+        url = item.url.lower()
 
-            evidence.linkedin_url = item.url
+        if "linkedin.com/company/" not in url:
+            continue
 
-            item.source = EvidenceSource.LINKEDIN
+        s = 0
 
-            break
+        if "/jobs" not in url:
+            s += 100
+
+        if "/posts" in url:
+            s -= 20
+
+        if "/people" in url:
+            s -= 20
+
+        if s > score:
+
+            score = s
+
+            best = item.url
+
+    evidence.linkedin_url = best
 
     return evidence
