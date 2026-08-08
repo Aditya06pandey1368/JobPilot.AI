@@ -34,3 +34,4 @@ class ResumeMatchReport(BaseModel):
     suggestions: list[str] = Field(
         default_factory=list
     )
+    summary: str = ""

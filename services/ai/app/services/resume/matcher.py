@@ -3,6 +3,7 @@ from app.schemas.job_requirement import (
 )
 
 from app.schemas.resume import Resume
+
 from app.schemas.resume_match import (
     ResumeMatchReport,
 )
@@ -14,6 +15,10 @@ from app.services.resume.scoring import (
     calculate_education_score,
     calculate_resume_quality,
     calculate_overall_score,
+)
+
+from app.services.resume.coach import (
+    generate_feedback,
 )
 
 def match_skills(
@@ -86,27 +91,31 @@ def match_resume(
         ats_score,
     )
 
-    return ResumeMatchReport(
-
+    report = ResumeMatchReport(
         overall_score=overall_score,
-
         skill_score=skill_score,
-
         experience_score=experience_score,
-
         project_score=project_score,
-
         education_score=education_score,
-
         ats_score=ats_score,
-
         matched_skills=matched,
-
         missing_skills=missing,
-
         strengths=[],
-
         weaknesses=[],
-
         suggestions=[],
+        summary="",
     )
+
+    feedback = generate_feedback(
+        resume,
+        requirements,
+        report,
+    )
+
+    report.strengths = feedback.strengths
+    report.weaknesses = feedback.weaknesses
+    report.suggestions = feedback.suggestions
+    report.summary = feedback.summary
+
+    return report
+    
