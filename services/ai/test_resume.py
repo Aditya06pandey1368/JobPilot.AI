@@ -129,12 +129,46 @@ print(requirements.model_dump())
 
 print()
 print("=" * 70)
-print("SKILL MATCH")
+print("RESUME MATCH REPORT")
 print("=" * 70)
 
-result = match_resume(
+report = match_resume(
     resume,
     requirements,
 )
 
-print(result)
+print(f"Overall Score     : {report.overall_score}")
+print(f"Skill Score       : {report.skill_score}")
+print(f"Experience Score  : {report.experience_score}")
+print(f"Project Score     : {report.project_score}")
+print(f"Education Score   : {report.education_score}")
+print(f"ATS Score         : {report.ats_score}")
+
+print("\nMatched Skills")
+for skill in report.matched_skills:
+    print(f"✓ {skill}")
+
+print("\nMissing Skills")
+for skill in report.missing_skills:
+    print(f"✗ {skill}")
+
+print("\nStrengths")
+if report.strengths:
+    for strength in report.strengths:
+        print(f"• {strength}")
+else:
+    print("None")
+
+print("\nWeaknesses")
+if report.weaknesses:
+    for weakness in report.weaknesses:
+        print(f"• {weakness}")
+else:
+    print("None")
+
+print("\nSuggestions")
+if report.suggestions:
+    for suggestion in report.suggestions:
+        print(f"• {suggestion}")
+else:
+    print("None")

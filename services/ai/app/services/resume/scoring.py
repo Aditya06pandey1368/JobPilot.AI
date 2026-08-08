@@ -81,3 +81,33 @@ def calculate_resume_quality(
         score += 20
 
     return score
+
+def calculate_overall_score(
+
+    skill_score: int,
+
+    experience_score: int,
+
+    project_score: int,
+
+    education_score: int,
+
+    ats_score: int,
+
+) -> int:
+
+    overall = (
+
+        skill_score * 0.35 +
+
+        experience_score * 0.25 +
+
+        project_score * 0.15 +
+
+        education_score * 0.15 +
+
+        ats_score * 0.10
+
+    )
+
+    return int(overall)

@@ -7,6 +7,15 @@ from app.schemas.resume_match import (
     ResumeMatchReport,
 )
 
+from app.services.resume.scoring import (
+    calculate_skill_score,
+    calculate_experience_score,
+    calculate_project_score,
+    calculate_education_score,
+    calculate_resume_quality,
+    calculate_overall_score,
+)
+
 def match_skills(
     resume: Resume,
     requirements: JobRequirement,
@@ -34,21 +43,7 @@ def match_skills(
 
     return matched, missing
 
-def calculate_skill_score(
-    matched,
-    required,
-):
 
-    if not required:
-        return 100
-
-    return int(
-        len(matched)
-        /
-        len(required)
-        *
-        100
-    )
 
 def match_resume(
     resume: Resume,
@@ -60,28 +55,58 @@ def match_resume(
         requirements,
     )
 
-    score = calculate_skill_score(
+    skill_score = calculate_skill_score(
         matched,
         requirements.skills,
     )
 
+    experience_score = calculate_experience_score(
+        resume,
+        requirements,
+    )
+
+    project_score = calculate_project_score(
+        resume,
+    )
+
+    education_score = calculate_education_score(
+        resume,
+        requirements,
+    )
+
+    ats_score = calculate_resume_quality(
+        resume,
+    )
+
+    overall_score = calculate_overall_score(
+        skill_score,
+        experience_score,
+        project_score,
+        education_score,
+        ats_score,
+    )
+
     return ResumeMatchReport(
 
-        overall_score=score,
+        overall_score=overall_score,
 
-        skill_score=score,
+        skill_score=skill_score,
 
-        experience_score=0,
+        experience_score=experience_score,
 
-        education_score=0,
+        project_score=project_score,
 
-        ats_score=0,
+        education_score=education_score,
+
+        ats_score=ats_score,
 
         matched_skills=matched,
 
         missing_skills=missing,
 
         strengths=[],
+
+        weaknesses=[],
 
         suggestions=[],
     )
