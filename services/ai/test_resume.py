@@ -5,6 +5,9 @@ from app.services.resume.extractor import (
 from app.services.resume.job_extractor import (
     extract_job_requirements,
 )
+from app.services.resume.matcher import (
+    match_resume,
+)
 
 
 resume_text = """
@@ -123,3 +126,15 @@ requirements = extract_job_requirements(
 )
 
 print(requirements.model_dump())
+
+print()
+print("=" * 70)
+print("SKILL MATCH")
+print("=" * 70)
+
+result = match_resume(
+    resume,
+    requirements,
+)
+
+print(result)

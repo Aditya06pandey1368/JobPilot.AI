@@ -3,6 +3,9 @@ from app.schemas.job_requirement import (
 )
 
 from app.schemas.resume import Resume
+from app.schemas.resume_match import (
+    ResumeMatchReport,
+)
 
 def match_skills(
     resume: Resume,
@@ -50,7 +53,7 @@ def calculate_skill_score(
 def match_resume(
     resume: Resume,
     requirements: JobRequirement,
-):
+) -> ResumeMatchReport:
 
     matched, missing = match_skills(
         resume,
@@ -62,11 +65,23 @@ def match_resume(
         requirements.skills,
     )
 
-    return {
+    return ResumeMatchReport(
 
-        "matched": matched,
+        overall_score=score,
 
-        "missing": missing,
+        skill_score=score,
 
-        "score": score,
-    }
+        experience_score=0,
+
+        education_score=0,
+
+        ats_score=0,
+
+        matched_skills=matched,
+
+        missing_skills=missing,
+
+        strengths=[],
+
+        suggestions=[],
+    )
