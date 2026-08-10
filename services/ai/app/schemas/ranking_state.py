@@ -8,6 +8,8 @@ from app.schemas.company_trust import TrustReport
 
 class RankingState(TypedDict):
 
+    user_query: str
+
     jobs: list[AnalyzedJob]
 
     resume: Resume | None

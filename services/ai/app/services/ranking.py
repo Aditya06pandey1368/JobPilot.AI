@@ -8,6 +8,7 @@ from app.services.resume.job_matcher import (
 from app.services.company.job_trust import (
     get_company_trust,
 )
+from datetime import datetime, timezone
 
 
 def calculate_freshness_score(job) -> int:
@@ -15,7 +16,36 @@ def calculate_freshness_score(job) -> int:
     if not job.posted_at:
         return 50
 
-    return 100
+    posted_at = job.posted_at
+
+    # Handle timezone-naive datetimes
+    if posted_at.tzinfo is None:
+        posted_at = posted_at.replace(
+            tzinfo=timezone.utc
+        )
+
+    now = datetime.now(timezone.utc)
+
+    age_days = (
+        now - posted_at
+    ).total_seconds() / 86400
+
+    if age_days <= 1:
+        return 100
+
+    if age_days <= 2:
+        return 90
+
+    if age_days <= 4:
+        return 80
+
+    if age_days <= 7:
+        return 70
+
+    if age_days <= 14:
+        return 50
+
+    return 20
 
 
 def calculate_final_score(
