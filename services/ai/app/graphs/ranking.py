@@ -11,7 +11,7 @@ def rank_jobs_node(
 
     ranked_jobs = rank_jobs(
         state["jobs"],
-        state["resume_report"],
+        state["resume"],
     )
 
     return {
