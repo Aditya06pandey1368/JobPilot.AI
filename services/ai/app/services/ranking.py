@@ -5,6 +5,9 @@ from app.schemas.resume import Resume
 from app.services.resume.job_matcher import (
     match_resume_to_job,
 )
+from app.services.company.job_trust import (
+    get_company_trust,
+)
 
 
 def calculate_freshness_score(job) -> int:
@@ -35,6 +38,7 @@ def calculate_final_score(
 def rank_jobs(
     jobs: list[AnalyzedJob],
     resume: Resume | None,
+    company_trust_reports,
 ) -> list[RankedJob]:
 
     ranked_jobs = []
@@ -56,7 +60,18 @@ def rank_jobs(
 
             resume_score = 50
 
-        company_trust_score = 50
+        company_name = analyzed_job.job.company
+
+        trust_report = company_trust_reports.get(
+            company_name
+        )
+
+        if trust_report:
+            company_trust_score = (
+                trust_report.trust_score
+            )
+        else:
+            company_trust_score = 50
 
         freshness_score = (
             calculate_freshness_score(
