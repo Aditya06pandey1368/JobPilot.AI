@@ -1,16 +1,19 @@
 from app.schemas.job_relevance import AnalyzedJob
 from app.schemas.job_ranking import RankedJob
-from app.schemas.resume_match import ResumeMatchReport
+from app.schemas.resume import Resume
+
+from app.services.resume.job_matcher import (
+    match_resume_to_job,
+)
 
 
-def calculate_freshness_score(
-    job,
-) -> int:
+def calculate_freshness_score(job) -> int:
 
     if not job.posted_at:
         return 50
 
     return 100
+
 
 def calculate_final_score(
     relevance_score: int,
@@ -28,25 +31,37 @@ def calculate_final_score(
 
     return int(score)
 
+
 def rank_jobs(
     jobs: list[AnalyzedJob],
-    resume_report: ResumeMatchReport | None,
+    resume: Resume | None,
 ) -> list[RankedJob]:
 
     ranked_jobs = []
 
     for analyzed_job in jobs:
 
-        resume_score = (
-            resume_report.overall_score
-            if resume_report
-            else 50
-        )
+        if resume is not None:
+
+            resume_report = match_resume_to_job(
+                resume,
+                analyzed_job.job,
+            )
+
+            resume_score = (
+                resume_report.overall_score
+            )
+
+        else:
+
+            resume_score = 50
 
         company_trust_score = 50
 
-        freshness_score = calculate_freshness_score(
-            analyzed_job.job
+        freshness_score = (
+            calculate_freshness_score(
+                analyzed_job.job
+            )
         )
 
         final_score = calculate_final_score(
@@ -70,9 +85,7 @@ def rank_jobs(
                     company_trust_score
                 ),
 
-                freshness_score=(
-                    freshness_score
-                ),
+                freshness_score=freshness_score,
 
                 final_score=final_score,
 

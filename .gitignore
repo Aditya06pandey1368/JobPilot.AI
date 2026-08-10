@@ -40,3 +40,6 @@ services/ai/test_graph.py
 services/ai/test_company.py
 services/ai/test_resume.py
 services/ai/test_resume_graph.py
+services/ai/test_ranking.py
+services/ai/test_ranking_graph.py
+services/ai/test_job_matcher.py
