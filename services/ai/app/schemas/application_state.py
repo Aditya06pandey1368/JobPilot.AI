@@ -2,7 +2,13 @@ from typing import TypedDict
 
 from app.schemas.job import Job
 from app.schemas.resume import Resume
-from app.schemas.application import ApplicationReport
+
+from app.schemas.application import (
+    ApplicationAnalysis,
+    TailoredResume,
+    CoverLetter,
+    ApplicationChecklist,
+)
 
 
 class ApplicationState(TypedDict):
@@ -11,4 +17,10 @@ class ApplicationState(TypedDict):
 
     resume: Resume
 
-    report: ApplicationReport | None
+    analysis: ApplicationAnalysis | None
+
+    tailored_resume: TailoredResume | None
+
+    cover_letter: CoverLetter | None
+
+    checklist: ApplicationChecklist | None
