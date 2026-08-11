@@ -73,6 +73,7 @@ RULES
 - Do not invent achievements.
 - Do not invent skills.
 - Do not make unsupported claims.
+- Never convert a job responsibility into a claim that the candidate has performed that responsibility.
 """
 
     return cover_letter_model.invoke(prompt)

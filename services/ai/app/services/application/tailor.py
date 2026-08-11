@@ -69,25 +69,35 @@ Certifications:
 INSTRUCTIONS
 
 Create recommendations for tailoring the
-resume toward this specific job.
+existing resume toward this specific job.
 
 You may:
 
-- Rewrite the professional summary.
-- Select the most relevant skills.
-- Select the most relevant projects.
-- Select the most relevant experience.
-- Identify important keywords to emphasize.
+- Rewrite the professional summary using
+  existing facts.
+- Select the most relevant existing skills.
+- Select the most relevant existing projects.
+- Select the most relevant existing experience.
+- Identify job keywords that genuinely match
+  the candidate's background.
 
-Rules:
+STRICT RULES:
 
 - Never invent experience.
 - Never invent skills.
 - Never invent projects.
 - Never invent achievements.
 - Never invent certifications.
-- Only use information actually present
-  in the supplied resume.
+- Never add a missing skill as if the candidate
+  already possesses it.
+- Never create fictional experience to improve
+  the match.
+- Do not add AWS, REST APIs, or any other skill
+  unless it is actually supported by the resume.
+- Only use information actually present in
+  the supplied resume.
+- Never describe the candidate as having a skill unless that skill appears in the resume.
+- If communication skills are missing from the resume, do not describe the candidate as having strong communication skills.
 """
 
     return tailor_model.invoke(prompt)

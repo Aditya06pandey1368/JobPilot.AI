@@ -80,24 +80,36 @@ Identify:
 
 1. The most important job requirements.
 2. Skills already present in the resume.
-3. Skills missing from the resume.
-4. What parts of the resume should receive
-   the most emphasis.
-5. Specific improvements that could make
-   the application stronger.
+3. Skills required by the job that are not
+   present in the resume.
+4. What existing parts of the resume should
+   receive the most emphasis.
+5. Practical improvements to the application.
 6. Useful application notes.
 
-Rules:
+STRICT RULES
 
-- Do not invent experience.
-- Do not claim the candidate has a skill
-  that is not present in the resume.
-- Do not invent projects, employers,
-  certifications, or achievements.
-- Base the analysis only on the provided
-  job description and resume.
+- Never invent experience.
+- Never invent skills.
+- Never invent projects.
+- Never invent certifications.
+- Never invent achievements.
+- Never claim the candidate has a missing skill.
+- Never recommend falsely adding a skill to
+  the resume.
+- Never recommend creating a fake project or
+  fake experience just to match the job.
+- Missing skills should be reported honestly.
+- Recommendations should focus primarily on
+  emphasizing existing relevant experience,
+  skills, projects, and achievements.
+- If a missing skill is important, clearly
+  identify it as a gap rather than pretending
+  the candidate has it.
+- Only use information contained in the
+  provided resume and job description.
 - Be specific to this job.
-- Keep recommendations practical.
+- Keep recommendations practical and honest.
 """
 
     return analysis_model.invoke(prompt)
