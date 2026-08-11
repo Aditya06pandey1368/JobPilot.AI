@@ -51,8 +51,6 @@ def collect_company_trust_node(
 
         company = analyzed_job.job.company
 
-        # Don't collect the same company's
-        # trust report multiple times.
         if company in reports:
             continue
 
@@ -60,9 +58,25 @@ def collect_company_trust_node(
             f"Collecting trust evidence: {company}"
         )
 
-        reports[company] = get_company_trust(
-            analyzed_job.job
-        )
+        try:
+
+            reports[company] = get_company_trust(
+                analyzed_job.job
+            )
+
+        except Exception as e:
+
+            print(
+                f"Trust analysis failed for "
+                f"{company}: {e}"
+            )
+
+            print(
+                f"Using fallback trust score "
+                f"for {company}"
+            )
+
+            reports[company] = None
 
     return {
         "company_trust_reports": reports
