@@ -5,18 +5,34 @@ def has_enough_evidence(
     evidence: CompanyEvidence,
 ) -> bool:
 
-    score = 0
+    website = bool(
+        evidence.official_website
+    )
 
-    if evidence.official_website:
-        score += 1
+    linkedin = bool(
+        evidence.linkedin_url
+    )
 
-    if evidence.linkedin_url:
-        score += 1
+    careers = bool(
+        evidence.careers_page
+    )
 
-    if evidence.careers_page:
-        score += 1
+    evidence_count = len(
+        evidence.evidence_items
+    )
 
-    if len(evidence.evidence_items) >= 5:
-        score += 1
+    return (
+        website
+        and linkedin
+        and careers
+        and evidence_count >= 3
+    )
 
-    return score >= 3
+
+def should_use_llm(
+    evidence: CompanyEvidence,
+) -> bool:
+
+    return not has_enough_evidence(
+        evidence
+    )
