@@ -8,6 +8,8 @@ from app.schemas.application import ApplicationReport
 
 class OrchestratorState(TypedDict):
 
+    operation: str
+
     user_query: str
 
     resume: Resume
