@@ -1,15 +1,34 @@
 from fastapi import FastAPI
 
-app = FastAPI(
-    title="JobPilot.AI AI Service",
-    description="Agentic AI service for JobPilot.AI",
-    version="0.1.0",
+from app.api.routes.jobs import (
+    router as jobs_router,
 )
 
 
-@app.get("/health")
-async def health_check():
+app = FastAPI(
+    title="JobPilot.AI",
+)
+
+
+app.include_router(
+    jobs_router
+)
+
+
+@app.get("/")
+
+async def root():
+
     return {
-        "status": "ok",
-        "service": "jobpilot-ai",
+        "message": "JobPilot.AI API",
+        "status": "running",
+    }
+
+
+@app.get("/health")
+
+async def health():
+
+    return {
+        "status": "healthy"
     }

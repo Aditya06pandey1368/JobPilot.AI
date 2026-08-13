@@ -1,12 +1,13 @@
 from pydantic import BaseModel, Field
 
+from app.schemas.job import Job
+
 
 class ApplicationRequest(BaseModel):
 
-    job_id: str = Field(
-        min_length=1
-    )
+    job: Job
 
     resume_text: str = Field(
-        min_length=10
+        min_length=10,
+        description="Candidate resume text",
     )
