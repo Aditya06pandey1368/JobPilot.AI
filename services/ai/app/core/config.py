@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     adzuna_app_id: str
     adzuna_app_key: str
     tavily_api_key: str
+    mongodb_uri: str
+    mongodb_database: str = "jobpilot"
 
     model_config = SettingsConfigDict(
         env_file=".env",
