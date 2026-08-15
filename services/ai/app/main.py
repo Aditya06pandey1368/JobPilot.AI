@@ -4,7 +4,14 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 from app.db.mongodb import create_mongo_client
-from app.api.routes.jobs import router as jobs_router
+
+from app.api.routes.jobs import (
+    router as jobs_router,
+)
+
+from app.api.routes.auth import (
+    router as auth_router,
+)
 
 
 @asynccontextmanager
@@ -40,6 +47,10 @@ app = FastAPI(
 
 app.include_router(
     jobs_router
+)
+
+app.include_router(
+    auth_router
 )
 
 

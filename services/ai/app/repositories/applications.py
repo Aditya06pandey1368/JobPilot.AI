@@ -15,6 +15,7 @@ VALID_STATUSES = {
 
 async def save_application(
     database,
+    user_id,
     job,
     resume,
     application_report,
@@ -23,6 +24,8 @@ async def save_application(
     collection = database["applications"]
 
     document = {
+        "user_id": user_id,
+
         "job_external_id": job.external_id,
         "job_source": job.source,
 
@@ -54,20 +57,28 @@ async def save_application(
         document
     )
 
-    return str(result.inserted_id)
+    return str(
+        result.inserted_id
+    )
 
 
 async def get_applications(
     database,
-    limit: int = 50,
+    user_id,
+    limit=50,
 ):
 
     collection = database["applications"]
 
     cursor = (
         collection
-        .find()
-        .sort("updated_at", -1)
+        .find({
+            "user_id": user_id
+        })
+        .sort(
+            "updated_at",
+            -1,
+        )
         .limit(limit)
     )
 
@@ -79,14 +90,17 @@ async def get_applications(
             document["_id"]
         )
 
-        applications.append(document)
+        applications.append(
+            document
+        )
 
     return applications
 
 
 async def get_application(
     database,
-    application_id: str,
+    user_id,
+    application_id,
 ):
 
     if not ObjectId.is_valid(
@@ -97,7 +111,10 @@ async def get_application(
     collection = database["applications"]
 
     document = await collection.find_one({
-        "_id": ObjectId(application_id)
+        "_id": ObjectId(
+            application_id
+        ),
+        "user_id": user_id,
     })
 
     if document is None:
@@ -112,11 +129,13 @@ async def get_application(
 
 async def update_application_status(
     database,
-    application_id: str,
-    status: str,
+    user_id,
+    application_id,
+    status,
 ):
 
     if status not in VALID_STATUSES:
+
         raise ValueError(
             f"Invalid status: {status}"
         )
@@ -129,11 +148,14 @@ async def update_application_status(
     collection = database["applications"]
 
     result = await collection.update_one(
+
         {
             "_id": ObjectId(
                 application_id
-            )
+            ),
+            "user_id": user_id,
         },
+
         {
             "$set": {
                 "status": status,

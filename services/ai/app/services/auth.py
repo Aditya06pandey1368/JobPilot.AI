@@ -25,7 +25,7 @@ def verify_password(
 
     return password_hash.verify(
         password,
-        hashed_password,
+        hashed_password
     )
 
 
@@ -33,10 +33,11 @@ def create_access_token(
     user_id: str,
 ) -> str:
 
-    expire = datetime.now(
-        timezone.utc
-    ) + timedelta(
-        minutes=settings.jwt_access_token_expire_minutes
+    expire = (
+        datetime.now(timezone.utc)
+        + timedelta(
+            minutes=settings.access_token_expire_minutes
+        )
     )
 
     payload = {

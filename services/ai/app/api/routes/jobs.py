@@ -1,7 +1,12 @@
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Request,
+)
+
+from app.api.dependencies import (
+    get_current_user,
 )
 
 from app.schemas.api.job_search import (
@@ -39,6 +44,10 @@ router = APIRouter(
     tags=["Jobs"],
 )
 
+
+# ============================================================
+# SEARCH JOBS
+# ============================================================
 
 @router.post("/search")
 async def search_jobs(
@@ -88,6 +97,7 @@ async def search_jobs(
 
         return {
             "success": True,
+            "count": len(ranked_jobs),
             "jobs": ranked_jobs,
         }
 
@@ -99,6 +109,10 @@ async def search_jobs(
         )
 
 
+# ============================================================
+# GET SAVED JOBS
+# ============================================================
+
 @router.get("")
 async def list_jobs(
     request: Request,
@@ -108,6 +122,7 @@ async def list_jobs(
     try:
 
         if limit < 1 or limit > 100:
+
             raise HTTPException(
                 status_code=400,
                 detail="Limit must be between 1 and 100",
@@ -138,7 +153,13 @@ async def list_jobs(
         )
 
 
-@router.get("/detail/{source}/{external_id}")
+# ============================================================
+# GET JOB DETAILS
+# ============================================================
+
+@router.get(
+    "/detail/{source}/{external_id}"
+)
 async def get_job_details(
     request: Request,
     source: str,
@@ -179,10 +200,17 @@ async def get_job_details(
         )
 
 
+# ============================================================
+# GENERATE APPLICATION
+# ============================================================
+
 @router.post("/application")
 async def generate_application(
     request: Request,
     data: ApplicationRequest,
+    user=Depends(
+        get_current_user
+    ),
 ):
 
     try:
@@ -233,6 +261,7 @@ async def generate_application(
 
         application_id = await save_application(
             database,
+            user["_id"],
             job,
             resume,
             application_report,
@@ -256,15 +285,23 @@ async def generate_application(
         )
 
 
+# ============================================================
+# GET USER APPLICATIONS
+# ============================================================
+
 @router.get("/applications")
 async def list_applications(
     request: Request,
     limit: int = 50,
+    user=Depends(
+        get_current_user
+    ),
 ):
 
     try:
 
         if limit < 1 or limit > 100:
+
             raise HTTPException(
                 status_code=400,
                 detail="Limit must be between 1 and 100",
@@ -274,6 +311,7 @@ async def list_applications(
 
         applications = await get_applications(
             database,
+            user["_id"],
             limit,
         )
 
@@ -295,10 +333,19 @@ async def list_applications(
         )
 
 
-@router.get("/applications/{application_id}")
+# ============================================================
+# GET APPLICATION DETAILS
+# ============================================================
+
+@router.get(
+    "/applications/{application_id}"
+)
 async def get_application_details(
     request: Request,
     application_id: str,
+    user=Depends(
+        get_current_user
+    ),
 ):
 
     try:
@@ -307,6 +354,7 @@ async def get_application_details(
 
         application = await get_application(
             database,
+            user["_id"],
             application_id,
         )
 
@@ -334,6 +382,10 @@ async def get_application_details(
         )
 
 
+# ============================================================
+# UPDATE APPLICATION STATUS
+# ============================================================
+
 @router.patch(
     "/applications/{application_id}/status"
 )
@@ -341,6 +393,9 @@ async def update_status(
     request: Request,
     application_id: str,
     data: ApplicationStatusRequest,
+    user=Depends(
+        get_current_user
+    ),
 ):
 
     try:
@@ -349,6 +404,7 @@ async def update_status(
 
         updated = await update_application_status(
             database,
+            user["_id"],
             application_id,
             data.status,
         )
@@ -362,6 +418,7 @@ async def update_status(
 
         application = await get_application(
             database,
+            user["_id"],
             application_id,
         )
 
