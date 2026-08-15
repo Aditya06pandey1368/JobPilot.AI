@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     tavily_api_key: str
     mongodb_uri: str
     mongodb_database: str = "jobpilot"
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24
 
     model_config = SettingsConfigDict(
         env_file=".env",
