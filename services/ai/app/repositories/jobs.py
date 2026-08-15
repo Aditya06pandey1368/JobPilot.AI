@@ -1,17 +1,14 @@
-from app.db.mongodb import (
-    jobs_collection,
-)
-
 from app.schemas.job import Job
 
 
 async def save_job(
+    database,
     job: Job,
 ):
 
-    document = job.model_dump()
+    collection = database["jobs"]
 
-    await jobs_collection.update_one(
+    await collection.update_one(
 
         {
             "external_id": job.external_id,
@@ -19,7 +16,7 @@ async def save_job(
         },
 
         {
-            "$set": document,
+            "$set": job.model_dump(),
         },
 
         upsert=True,
@@ -27,11 +24,14 @@ async def save_job(
 
 
 async def get_job(
+    database,
     external_id: str,
     source: str,
 ):
 
-    document = await jobs_collection.find_one({
+    collection = database["jobs"]
+
+    document = await collection.find_one({
 
         "external_id": external_id,
 

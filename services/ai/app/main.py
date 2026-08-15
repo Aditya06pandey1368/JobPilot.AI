@@ -1,12 +1,40 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from app.api.routes.jobs import (
-    router as jobs_router,
-)
+from app.core.config import settings
+from app.db.mongodb import create_mongo_client
+from app.api.routes.jobs import router as jobs_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    client = create_mongo_client()
+
+    database = client[
+        settings.mongodb_database
+    ]
+
+    await database.command("ping")
+
+    app.state.mongodb_client = client
+    app.state.database = database
+
+    print("MongoDB connected")
+
+    yield
+
+    await client.close()
+
+    print("MongoDB connection closed")
 
 
 app = FastAPI(
     title="JobPilot.AI",
+    description="AI-powered job discovery and application platform",
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 
@@ -16,7 +44,6 @@ app.include_router(
 
 
 @app.get("/")
-
 async def root():
 
     return {
@@ -26,7 +53,6 @@ async def root():
 
 
 @app.get("/health")
-
 async def health():
 
     return {

@@ -1,4 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Request,
+)
 
 from app.schemas.api.job_search import (
     JobSearchRequest,
@@ -12,6 +16,11 @@ from app.graphs.orchestrator import (
     master_orchestrator,
 )
 
+from app.repositories.jobs import (
+    save_job,
+    get_job,
+)
+
 
 router = APIRouter(
     prefix="/api/jobs",
@@ -21,7 +30,8 @@ router = APIRouter(
 
 @router.post("/search")
 async def search_jobs(
-    request: JobSearchRequest,
+    request: Request,
+    data: JobSearchRequest,
 ):
 
     try:
@@ -31,14 +41,14 @@ async def search_jobs(
         )
 
         resume = extract_resume(
-            request.resume_text
+            data.resume_text
         )
 
         result = await master_orchestrator.ainvoke({
 
             "operation": "rank",
 
-            "user_query": request.query,
+            "user_query": data.query,
 
             "resume": resume,
 
@@ -51,9 +61,22 @@ async def search_jobs(
             "application_report": None,
         })
 
+        ranked_jobs = result[
+            "ranked_jobs"
+        ]
+
+        database = request.app.state.database
+
+        for ranked_job in ranked_jobs:
+
+            await save_job(
+                database,
+                ranked_job.job,
+            )
+
         return {
             "success": True,
-            "jobs": result["ranked_jobs"],
+            "jobs": ranked_jobs,
         }
 
     except Exception as error:
@@ -66,17 +89,33 @@ async def search_jobs(
 
 @router.post("/application")
 async def generate_application(
-    request: ApplicationRequest,
+    request: Request,
+    data: ApplicationRequest,
 ):
 
     try:
+
+        database = request.app.state.database
+
+        job = await get_job(
+            database,
+            external_id=data.external_id,
+            source=data.source,
+        )
+
+        if job is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Job not found",
+            )
 
         from app.services.resume.extractor import (
             extract_resume,
         )
 
         resume = extract_resume(
-            request.resume_text
+            data.resume_text
         )
 
         result = await master_orchestrator.ainvoke({
@@ -91,7 +130,7 @@ async def generate_application(
 
             "ranked_jobs": [],
 
-            "selected_job": request.job,
+            "selected_job": job,
 
             "application_report": None,
         })
@@ -102,6 +141,10 @@ async def generate_application(
                 "application_report"
             ],
         }
+
+    except HTTPException:
+
+        raise
 
     except Exception as error:
 
