@@ -21,6 +21,10 @@ from app.repositories.jobs import (
     get_job,
 )
 
+from app.repositories.applications import (
+    save_application,
+)
+
 
 router = APIRouter(
     prefix="/api/jobs",
@@ -135,11 +139,23 @@ async def generate_application(
             "application_report": None,
         })
 
+        application_report = result[
+            "application_report"
+        ]
+
+        application_id = await save_application(
+            database,
+            job,
+            resume,
+            application_report,
+        )
+
         return {
             "success": True,
-            "application": result[
-                "application_report"
-            ],
+
+            "application_id": application_id,
+
+            "application": application_report,
         }
 
     except HTTPException:
