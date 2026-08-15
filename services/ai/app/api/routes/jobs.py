@@ -12,6 +12,10 @@ from app.schemas.api.application import (
     ApplicationRequest,
 )
 
+from app.schemas.api.application_status import (
+    ApplicationStatusRequest,
+)
+
 from app.graphs.orchestrator import (
     master_orchestrator,
 )
@@ -19,10 +23,14 @@ from app.graphs.orchestrator import (
 from app.repositories.jobs import (
     save_job,
     get_job,
+    get_jobs,
 )
 
 from app.repositories.applications import (
     save_application,
+    get_applications,
+    get_application,
+    update_application_status,
 )
 
 
@@ -82,6 +90,86 @@ async def search_jobs(
             "success": True,
             "jobs": ranked_jobs,
         }
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        )
+
+
+@router.get("")
+async def list_jobs(
+    request: Request,
+    limit: int = 50,
+):
+
+    try:
+
+        if limit < 1 or limit > 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Limit must be between 1 and 100",
+            )
+
+        database = request.app.state.database
+
+        jobs = await get_jobs(
+            database,
+            limit,
+        )
+
+        return {
+            "success": True,
+            "count": len(jobs),
+            "jobs": jobs,
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        )
+
+
+@router.get("/detail/{source}/{external_id}")
+async def get_job_details(
+    request: Request,
+    source: str,
+    external_id: str,
+):
+
+    try:
+
+        database = request.app.state.database
+
+        job = await get_job(
+            database,
+            external_id,
+            source,
+        )
+
+        if job is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Job not found",
+            )
+
+        return {
+            "success": True,
+            "job": job,
+        }
+
+    except HTTPException:
+
+        raise
 
     except Exception as error:
 
@@ -152,10 +240,134 @@ async def generate_application(
 
         return {
             "success": True,
-
             "application_id": application_id,
-
             "application": application_report,
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        )
+
+
+@router.get("/applications")
+async def list_applications(
+    request: Request,
+    limit: int = 50,
+):
+
+    try:
+
+        if limit < 1 or limit > 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Limit must be between 1 and 100",
+            )
+
+        database = request.app.state.database
+
+        applications = await get_applications(
+            database,
+            limit,
+        )
+
+        return {
+            "success": True,
+            "count": len(applications),
+            "applications": applications,
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        )
+
+
+@router.get("/applications/{application_id}")
+async def get_application_details(
+    request: Request,
+    application_id: str,
+):
+
+    try:
+
+        database = request.app.state.database
+
+        application = await get_application(
+            database,
+            application_id,
+        )
+
+        if application is None:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Application not found",
+            )
+
+        return {
+            "success": True,
+            "application": application,
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        )
+
+
+@router.patch(
+    "/applications/{application_id}/status"
+)
+async def update_status(
+    request: Request,
+    application_id: str,
+    data: ApplicationStatusRequest,
+):
+
+    try:
+
+        database = request.app.state.database
+
+        updated = await update_application_status(
+            database,
+            application_id,
+            data.status,
+        )
+
+        if not updated:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Application not found",
+            )
+
+        application = await get_application(
+            database,
+            application_id,
+        )
+
+        return {
+            "success": True,
+            "application": application,
         }
 
     except HTTPException:

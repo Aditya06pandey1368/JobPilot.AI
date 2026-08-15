@@ -9,16 +9,13 @@ async def save_job(
     collection = database["jobs"]
 
     await collection.update_one(
-
         {
             "external_id": job.external_id,
             "source": job.source,
         },
-
         {
             "$set": job.model_dump(),
         },
-
         upsert=True,
     )
 
@@ -32,21 +29,43 @@ async def get_job(
     collection = database["jobs"]
 
     document = await collection.find_one({
-
         "external_id": external_id,
-
         "source": source,
     })
 
     if document is None:
-
         return None
 
-    document.pop(
-        "_id",
-        None,
+    document.pop("_id", None)
+
+    return Job.model_validate(document)
+
+
+async def get_jobs(
+    database,
+    limit: int = 50,
+):
+
+    collection = database["jobs"]
+
+    cursor = (
+        collection
+        .find()
+        .sort("updated_at", -1)
+        .limit(limit)
     )
 
-    return Job.model_validate(
-        document
-    )
+    jobs = []
+
+    async for document in cursor:
+
+        document.pop("_id", None)
+
+        try:
+            jobs.append(
+                Job.model_validate(document)
+            )
+        except Exception:
+            continue
+
+    return jobs
