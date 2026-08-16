@@ -12,6 +12,7 @@ from app.api.routes.jobs import (
 from app.api.routes.auth import (
     router as auth_router,
 )
+from app.db.indexes import create_indexes
 
 
 @asynccontextmanager
@@ -24,6 +25,10 @@ async def lifespan(app: FastAPI):
     ]
 
     await database.command("ping")
+
+    await create_indexes(
+        database
+    )
 
     app.state.mongodb_client = client
     app.state.database = database
