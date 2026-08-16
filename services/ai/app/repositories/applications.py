@@ -24,9 +24,11 @@ async def save_application(
     collection = database["applications"]
 
     document = {
+
         "user_id": user_id,
 
         "job_external_id": job.external_id,
+
         "job_source": job.source,
 
         "job": job.model_dump(),
@@ -65,20 +67,29 @@ async def save_application(
 async def get_applications(
     database,
     user_id,
-    limit=50,
+    limit: int = 50,
+    offset: int = 0,
+    status: str | None = None,
 ):
 
     collection = database["applications"]
 
+    query = {
+        "user_id": user_id
+    }
+
+    if status is not None:
+
+        query["status"] = status
+
     cursor = (
         collection
-        .find({
-            "user_id": user_id
-        })
+        .find(query)
         .sort(
             "updated_at",
             -1,
         )
+        .skip(offset)
         .limit(limit)
     )
 

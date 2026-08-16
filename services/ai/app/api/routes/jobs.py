@@ -21,6 +21,16 @@ from app.schemas.api.application_status import (
     ApplicationStatusRequest,
 )
 
+from app.schemas.api.responses import (
+    JobSearchResponse,
+    JobListResponse,
+    JobDetailResponse,
+    ApplicationResponse,
+    ApplicationListResponse,
+    ApplicationDetailResponse,
+    ApplicationStatusResponse,
+)
+
 from app.graphs.orchestrator import (
     master_orchestrator,
 )
@@ -49,7 +59,10 @@ router = APIRouter(
 # SEARCH JOBS
 # ============================================================
 
-@router.post("/search")
+@router.post(
+    "/search",
+    response_model=JobSearchResponse,
+)
 async def search_jobs(
     request: Request,
     data: JobSearchRequest,
@@ -105,52 +118,62 @@ async def search_jobs(
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Job search failed",
+        ) from error
 
 
 # ============================================================
 # GET SAVED JOBS
 # ============================================================
 
-@router.get("")
+@router.get(
+    "",
+    response_model=JobListResponse,
+)
 async def list_jobs(
     request: Request,
     limit: int = 50,
+    offset: int = 0,
 ):
 
+    if limit < 1 or limit > 100:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Limit must be between 1 and 100",
+        )
+
+    if offset < 0:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Offset cannot be negative",
+        )
+
     try:
-
-        if limit < 1 or limit > 100:
-
-            raise HTTPException(
-                status_code=400,
-                detail="Limit must be between 1 and 100",
-            )
 
         database = request.app.state.database
 
         jobs = await get_jobs(
             database,
-            limit,
+            limit=limit,
+            offset=offset,
         )
 
         return {
             "success": True,
             "count": len(jobs),
+            "limit": limit,
+            "offset": offset,
             "jobs": jobs,
         }
-
-    except HTTPException:
-
-        raise
 
     except Exception as error:
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Unable to retrieve jobs",
+        ) from error
 
 
 # ============================================================
@@ -158,7 +181,8 @@ async def list_jobs(
 # ============================================================
 
 @router.get(
-    "/detail/{source}/{external_id}"
+    "/detail/{source}/{external_id}",
+    response_model=JobDetailResponse,
 )
 async def get_job_details(
     request: Request,
@@ -196,15 +220,18 @@ async def get_job_details(
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Unable to retrieve job",
+        ) from error
 
 
 # ============================================================
 # GENERATE APPLICATION
 # ============================================================
 
-@router.post("/application")
+@router.post(
+    "/application",
+    response_model=ApplicationResponse,
+)
 async def generate_application(
     request: Request,
     data: ApplicationRequest,
@@ -281,56 +308,84 @@ async def generate_application(
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Application generation failed",
+        ) from error
 
 
 # ============================================================
 # GET USER APPLICATIONS
 # ============================================================
 
-@router.get("/applications")
+@router.get(
+    "/applications",
+    response_model=ApplicationListResponse,
+)
 async def list_applications(
     request: Request,
     limit: int = 50,
+    offset: int = 0,
+    status: str | None = None,
     user=Depends(
         get_current_user
     ),
 ):
 
+    if limit < 1 or limit > 100:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Limit must be between 1 and 100",
+        )
+
+    if offset < 0:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Offset cannot be negative",
+        )
+
+    valid_statuses = {
+        "saved",
+        "applied",
+        "assessment",
+        "interview",
+        "offer",
+        "rejected",
+    }
+
+    if status is not None and status not in valid_statuses:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid application status",
+        )
+
     try:
-
-        if limit < 1 or limit > 100:
-
-            raise HTTPException(
-                status_code=400,
-                detail="Limit must be between 1 and 100",
-            )
 
         database = request.app.state.database
 
         applications = await get_applications(
             database,
             user["_id"],
-            limit,
+            limit=limit,
+            offset=offset,
+            status=status,
         )
 
         return {
             "success": True,
             "count": len(applications),
+            "limit": limit,
+            "offset": offset,
             "applications": applications,
         }
-
-    except HTTPException:
-
-        raise
 
     except Exception as error:
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Unable to retrieve applications",
+        ) from error
 
 
 # ============================================================
@@ -338,7 +393,8 @@ async def list_applications(
 # ============================================================
 
 @router.get(
-    "/applications/{application_id}"
+    "/applications/{application_id}",
+    response_model=ApplicationDetailResponse,
 )
 async def get_application_details(
     request: Request,
@@ -378,8 +434,8 @@ async def get_application_details(
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Unable to retrieve application",
+        ) from error
 
 
 # ============================================================
@@ -387,7 +443,8 @@ async def get_application_details(
 # ============================================================
 
 @router.patch(
-    "/applications/{application_id}/status"
+    "/applications/{application_id}/status",
+    response_model=ApplicationStatusResponse,
 )
 async def update_status(
     request: Request,
@@ -435,5 +492,5 @@ async def update_status(
 
         raise HTTPException(
             status_code=500,
-            detail=str(error),
-        )
+            detail="Unable to update application",
+        ) from error

@@ -14,7 +14,7 @@ async def save_job(
             "source": job.source,
         },
         {
-            "$set": job.model_dump(),
+            "$set": job.model_dump()
         },
         upsert=True,
     )
@@ -38,12 +38,15 @@ async def get_job(
 
     document.pop("_id", None)
 
-    return Job.model_validate(document)
+    return Job.model_validate(
+        document
+    )
 
 
 async def get_jobs(
     database,
     limit: int = 50,
+    offset: int = 0,
 ):
 
     collection = database["jobs"]
@@ -51,7 +54,11 @@ async def get_jobs(
     cursor = (
         collection
         .find()
-        .sort("updated_at", -1)
+        .sort(
+            "updated_at",
+            -1,
+        )
+        .skip(offset)
         .limit(limit)
     )
 
@@ -62,10 +69,15 @@ async def get_jobs(
         document.pop("_id", None)
 
         try:
+
             jobs.append(
-                Job.model_validate(document)
+                Job.model_validate(
+                    document
+                )
             )
+
         except Exception:
+
             continue
 
     return jobs
