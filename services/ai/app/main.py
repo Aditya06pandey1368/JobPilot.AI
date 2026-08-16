@@ -13,6 +13,10 @@ from app.api.routes.auth import (
     router as auth_router,
 )
 from app.db.indexes import create_indexes
+from app.core.logging import (
+    setup_logging,
+)
+setup_logging()
 
 
 @asynccontextmanager
