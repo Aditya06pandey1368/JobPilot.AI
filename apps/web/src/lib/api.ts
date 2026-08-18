@@ -10,37 +10,32 @@ const api = {
       body: JSON.stringify(data),
     });
 
-    const dataResponse = await response.json();
+    const responseData = await response.json();
 
     if (!response.ok) {
-      throw new Error(dataResponse.detail || "Request failed");
+      throw new Error(
+        responseData?.detail || "Request failed"
+      );
     }
 
     return {
-      data: dataResponse,
+      data: responseData,
     };
   },
 
   get: async (url: string) => {
-    const token = localStorage.getItem("access_token");
+    const response = await fetch(`${API_URL}${url}`);
 
-    const response = await fetch(`${API_URL}${url}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...(token
-          ? { Authorization: `Bearer ${token}` }
-          : {}),
-      },
-    });
-
-    const data = await response.json();
+    const responseData = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail || "Request failed");
+      throw new Error(
+        responseData?.detail || "Request failed"
+      );
     }
 
     return {
-      data,
+      data: responseData,
     };
   },
 };

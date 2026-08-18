@@ -8,7 +8,7 @@ from app.schemas.resume_match import ResumeMatchReport
 
 
 model = ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b",
     api_key=settings.groq_api_key,
     temperature=0,
 )

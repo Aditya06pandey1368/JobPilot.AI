@@ -9,7 +9,7 @@ _llm_semaphore = asyncio.Semaphore(2)
 
 
 model = ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b",
     api_key=settings.groq_api_key,
     temperature=0,
 )

@@ -5,7 +5,7 @@ from app.schemas.job_requirement import JobRequirement
 
 
 model = ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b",
     api_key=settings.groq_api_key,
     temperature=0,
 )

@@ -14,7 +14,7 @@ class TrustReport(BaseModel):
 
     trust_score: int = 0
 
-    confidence: int = 0
+    confidence: float = 0
 
     breakdown: TrustBreakdown
 
