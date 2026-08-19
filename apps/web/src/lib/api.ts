@@ -1,43 +1,30 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "http://localhost:8000/api";
 
-const api = {
-  post: async (url: string, data: unknown) => {
-    const response = await fetch(`${API_URL}${url}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
+  };
 
-    const responseData = await response.json();
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
 
-    if (!response.ok) {
-      throw new Error(
-        responseData?.detail || "Request failed"
-      );
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    
+    // FastAPI 422 validation errors send an array in 'detail'
+    if (response.status === 422 && Array.isArray(errorData.detail)) {
+      const messages = errorData.detail.map((err: any) => `${err.loc.join('.')}: ${err.msg}`);
+      throw new Error(messages.join(" | "));
     }
+    
+    throw new Error(errorData.detail || "API Request Failed");
+  }
 
-    return {
-      data: responseData,
-    };
-  },
-
-  get: async (url: string) => {
-    const response = await fetch(`${API_URL}${url}`);
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        responseData?.detail || "Request failed"
-      );
-    }
-
-    return {
-      data: responseData,
-    };
-  },
-};
-
-export default api;
+  return response.json();
+}

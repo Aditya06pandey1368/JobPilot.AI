@@ -37,7 +37,7 @@ async def discover_jobs_node(
     })
 
     return {
-        "jobs": result["relevant_jobs"]
+        "jobs": result["relevant_jobs"][:3]
     }
 
 
@@ -94,7 +94,7 @@ def rank_jobs_node(
     )
 
     return {
-        "ranked_jobs": ranked_jobs
+        "ranked_jobs": ranked_jobs[:3]
     }
 
 
