@@ -6,13 +6,22 @@ import Link from "next/link";
 
 export default function Register() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (!name || !email || !password) return;
+
+    setIsLoading(true);
+    setError("");
+
     try {
       const data = await fetchAPI("/auth/register", {
         method: "POST",
@@ -22,6 +31,7 @@ export default function Register() {
       router.push("/");
     } catch (err: any) {
       setError(err.message);
+      setIsLoading(false); // Only re-enable if there's an error
     }
   };
 
@@ -31,18 +41,23 @@ export default function Register() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleRegister} className="space-y-4">
         <input 
-          type="text" placeholder="Name" required className="w-full p-2 border rounded text-black"
-          value={name} onChange={(e) => setName(e.target.value)} 
+          name="name" type="text" placeholder="Name" required 
+          className="w-full p-2 border rounded text-black"
         />
         <input 
-          type="email" placeholder="Email" required className="w-full p-2 border rounded text-black"
-          value={email} onChange={(e) => setEmail(e.target.value)} 
+          name="email" type="email" placeholder="Email" required 
+          className="w-full p-2 border rounded text-black"
         />
         <input 
-          type="password" placeholder="Password" required className="w-full p-2 border rounded text-black"
-          value={password} onChange={(e) => setPassword(e.target.value)} 
+          name="password" type="password" placeholder="Password (min 8 chars)" required 
+          className="w-full p-2 border rounded text-black"
         />
-        <button type="submit" className="w-full bg-green-600 text-white p-2 rounded">Register</button>
+        <button 
+          type="submit" disabled={isLoading} 
+          className="w-full bg-green-600 text-white p-2 rounded disabled:opacity-50"
+        >
+          {isLoading ? "Creating account..." : "Register"}
+        </button>
       </form>
       <p className="mt-4 text-sm">Already have an account? <Link href="/login" className="text-blue-500">Login</Link></p>
     </div>

@@ -12,3 +12,6 @@ class JobSearchRequest(BaseModel):
         min_length=10,
         description="Candidate resume text"
     )
+
+class JobAnalyzeRequest(BaseModel):
+    resume_text: str = Field(min_length=10, description="Candidate resume text")

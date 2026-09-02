@@ -27,6 +27,8 @@ def tailor_resume(
     resume: Resume,
 ) -> TailoredResume:
 
+    safe_description = job.description[:2500] if job.description else ""
+
     prompt = f"""
 You are an expert technical resume editor.
 
@@ -42,7 +44,7 @@ Company:
 {job.company}
 
 Description:
-{job.description}
+{safe_description}
 
 
 RESUME

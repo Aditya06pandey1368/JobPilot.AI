@@ -6,12 +6,22 @@ import Link from "next/link";
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Extract directly from the form to bypass autofill sync issues
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (!email || !password) return;
+
+    setIsLoading(true);
+    setError("");
+    
     try {
       const data = await fetchAPI("/auth/login", {
         method: "POST",
@@ -21,6 +31,7 @@ export default function Login() {
       router.push("/");
     } catch (err: any) {
       setError(err.message);
+      setIsLoading(false);
     }
   };
 
@@ -30,14 +41,19 @@ export default function Login() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleLogin} className="space-y-4">
         <input 
-          type="email" placeholder="Email" required className="w-full p-2 border rounded text-black"
-          value={email} onChange={(e) => setEmail(e.target.value)} 
+          name="email" type="email" placeholder="Email" required 
+          className="w-full p-2 border rounded text-black"
         />
         <input 
-          type="password" placeholder="Password" required className="w-full p-2 border rounded text-black"
-          value={password} onChange={(e) => setPassword(e.target.value)} 
+          name="password" type="password" placeholder="Password" required 
+          className="w-full p-2 border rounded text-black"
         />
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">Login</button>
+        <button 
+          type="submit" disabled={isLoading} 
+          className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
+        >
+          {isLoading ? "Logging in..." : "Login"}
+        </button>
       </form>
       <p className="mt-4 text-sm">Need an account? <Link href="/register" className="text-blue-500">Register</Link></p>
     </div>

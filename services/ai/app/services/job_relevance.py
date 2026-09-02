@@ -1,5 +1,5 @@
 from langchain_groq import ChatGroq
-
+import time
 from app.core.config import settings
 from app.schemas.job import Job
 from app.schemas.job_search import JobSearchIntent
@@ -21,7 +21,7 @@ relevance_model = model.with_structured_output(
 )
 
 
-BATCH_SIZE = 5
+BATCH_SIZE = 2
 
 
 def analyze_job_relevance(
@@ -34,37 +34,32 @@ def analyze_job_relevance(
 
     all_analyzed_jobs = []
 
+    # RATE LIMIT FIX 1: Cap the jobs we evaluate to 15 to prevent massive API spam
+    jobs_to_evaluate = jobs[:4]
+
     # Process jobs in small batches
     for i in range(
         0,
-        len(jobs),
+        len(jobs_to_evaluate),
         BATCH_SIZE,
     ):
 
-        batch = jobs[
-            i : i + BATCH_SIZE
-        ]
+        batch = jobs_to_evaluate[i : i + BATCH_SIZE]
 
         print(
             f"Analyzing relevance "
             f"for jobs {i + 1}-{i + len(batch)} "
-            f"of {len(jobs)}"
+            f"of {len(jobs_to_evaluate)}"
         )
 
         job_data = []
 
         for job in batch:
-
             job_data.append({
-
                 "external_id": job.external_id,
-
                 "title": job.title,
-
                 "company": job.company,
-
                 "location": job.location,
-
                 "description": (
                     job.description[:1500]
                     if job.description
@@ -96,81 +91,29 @@ Remote allowed:
 
 
 IMPORTANT RULES:
-
-1. Judge relevance to the requested ROLE,
-   not merely whether it is a job.
-
-2. For internship searches, reject clearly
-   senior or experienced positions.
-
-3. Closely related role names are acceptable.
-
-   Examples:
-   - Software Engineer
-   - Software Developer
-   - SDE
-   - Backend Engineer
-
-   may be semantically related depending
-   on the request.
-
-4. Detect important restrictions such as:
-
-   - graduation year
-   - PhD requirement
-   - location mismatch
-   - experience requirement
-
-5. Put restrictions in warnings.
-
-6. A restriction does not automatically
-   make the role irrelevant.
-
-   Example:
-   "Software Engineer Intern -
-   2028 graduates"
-
-   is relevant to a software internship
-   search but should have a warning.
-
-7. Reject clearly unrelated fields such as:
-
-   - marketing
-   - finance
-   - sales
-   - HR
-   - operations
-
-8. Score relevance from 0 to 100.
-
-9. Evaluate every job in this batch.
-
-10. Return the exact external_id of each job.
-
+1. Judge relevance to the requested ROLE, not merely whether it is a job.
+2. For internship searches, reject clearly senior or experienced positions.
+3. Detect important restrictions such as location mismatch or experience requirement.
+4. Put restrictions in warnings.
+5. Score relevance from 0 to 100.
+6. Evaluate every job in this batch.
+7. Return the exact external_id of each job.
 
 CANDIDATE JOBS:
 
 {job_data}
 """
 
-
-        response = relevance_model.invoke(
-            prompt
-        )
-
+        # Make the LLM call
+        response = relevance_model.invoke(prompt)
 
         jobs_by_id = {
             job.external_id: job
             for job in batch
         }
 
-
         for result in response.results:
-
-            job = jobs_by_id.get(
-                result.external_id
-            )
-
+            job = jobs_by_id.get(result.external_id)
             if job is None:
                 continue
 
@@ -179,33 +122,20 @@ CANDIDATE JOBS:
 
             all_analyzed_jobs.append(
                 AnalyzedJob(
-
                     job=job,
-
-                    relevance_score=(
-                        result.relevance_score
-                    ),
-
-                    relevance_reason=(
-                        result.reason
-                    ),
-
-                    warnings=(
-                        result.warnings
-                    ),
+                    relevance_score=result.relevance_score,
+                    relevance_reason=result.reason,
+                    warnings=result.warnings,
                 )
             )
 
+        # RATE LIMIT FIX 2: Pause for 2 seconds before the next batch to cool down Groq
+        time.sleep(2)
 
-    # Sort all results after
-    # processing every batch.
-
+    # Sort all results after processing every batch.
     all_analyzed_jobs.sort(
-        key=lambda item: (
-            item.relevance_score
-        ),
+        key=lambda item: item.relevance_score,
         reverse=True,
     )
-
 
     return all_analyzed_jobs

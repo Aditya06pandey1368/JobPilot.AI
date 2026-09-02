@@ -27,6 +27,8 @@ def analyze_application(
     resume: Resume,
 ) -> ApplicationAnalysis:
 
+    safe_description = job.description[:2500] if job.description else ""
+
     prompt = f"""
 You are an expert job application advisor.
 
@@ -45,7 +47,7 @@ Location:
 {job.location}
 
 Description:
-{job.description}
+{safe_description}
 
 
 RESUME

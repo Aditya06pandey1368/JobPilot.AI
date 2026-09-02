@@ -27,6 +27,8 @@ def generate_cover_letter(
     resume: Resume,
 ) -> CoverLetter:
 
+    safe_description = job.description[:2500] if job.description else ""
+
     prompt = f"""
 Write a concise professional cover letter
 for this job.
@@ -40,7 +42,7 @@ Company:
 {job.company}
 
 Description:
-{job.description}
+{safe_description}
 
 
 CANDIDATE

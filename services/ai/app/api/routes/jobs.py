@@ -21,6 +21,11 @@ from app.schemas.api.application_status import (
     ApplicationStatusRequest,
 )
 
+from app.schemas.api.job_search import JobAnalyzeRequest
+from app.services.resume.extractor import extract_resume
+from app.services.resume.job_matcher import match_resume_to_job
+from app.services.company.job_trust import get_company_trust
+
 from app.schemas.api.responses import (
     JobSearchResponse,
     JobListResponse,
@@ -294,6 +299,8 @@ async def generate_application(
             application_report,
         )
 
+        # ... (inside generate_application) ...
+
         return {
             "success": True,
             "application_id": application_id,
@@ -301,15 +308,18 @@ async def generate_application(
         }
 
     except HTTPException:
-
         raise
 
     except Exception as error:
-
+        # We changed this part to print the exact error to the terminal
+        import traceback
+        traceback.print_exc()
+        
+        # And send the exact LLM error to the Next.js frontend!
         raise HTTPException(
             status_code=500,
-            detail="Application generation failed",
-        ) from error
+            detail=f"Generation failed: {str(error)}",
+        )
 
 
 # ============================================================
@@ -493,4 +503,43 @@ async def update_status(
         raise HTTPException(
             status_code=500,
             detail="Unable to update application",
+        ) from error
+
+
+@router.post("/detail/{source}/{external_id}/analyze")
+async def analyze_single_job(
+    request: Request,
+    source: str,
+    external_id: str,
+    data: JobAnalyzeRequest,
+):
+    try:
+        database = request.app.state.database
+        job = await get_job(database, external_id=external_id, source=source)
+
+        if job is None:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        # 1. Parse Candidate Resume
+        resume = extract_resume(data.resume_text)
+
+        # 2. Compute ATS Resume Match & Missing Skills
+        resume_match_report = match_resume_to_job(resume, job)
+
+        # 3. Compute Company Credibility & Trust
+        company_trust_report = get_company_trust(job)
+
+        return {
+            "success": True,
+            "job": job,
+            "ats_match": resume_match_report,
+            "company_trust": company_trust_report,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Analysis failed: {str(error)}",
         ) from error
