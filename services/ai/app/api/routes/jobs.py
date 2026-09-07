@@ -299,8 +299,6 @@ async def generate_application(
             application_report,
         )
 
-        # ... (inside generate_application) ...
-
         return {
             "success": True,
             "application_id": application_id,
@@ -311,11 +309,9 @@ async def generate_application(
         raise
 
     except Exception as error:
-        # We changed this part to print the exact error to the terminal
         import traceback
         traceback.print_exc()
         
-        # And send the exact LLM error to the Next.js frontend!
         raise HTTPException(
             status_code=500,
             detail=f"Generation failed: {str(error)}",
@@ -543,3 +539,104 @@ async def analyze_single_job(
             status_code=500,
             detail=f"Analysis failed: {str(error)}",
         ) from error
+
+
+
+# ============================================================
+# GENERATE INTERVIEW PREP
+# ============================================================
+
+@router.post(
+    "/applications/{application_id}/interview-prep",
+)
+async def generate_interview_prep(
+    request: Request,
+    application_id: str,
+    user=Depends(get_current_user),
+):
+    # Native Groq Import
+    from langchain_groq import ChatGroq
+    from langchain_core.prompts import ChatPromptTemplate
+    import os
+    from dotenv import load_dotenv
+
+    try:
+        # Load environment variables to expose GROQ_API_KEY
+        load_dotenv()
+        
+        database = request.app.state.database
+        
+        # Fetch the saved application
+        application = await get_application(
+            database, 
+            user["_id"], 
+            application_id
+        )
+        
+        if not application:
+            raise HTTPException(status_code=404, detail="Application not found")
+
+        # Extract job details safely
+        job_title = application.get("job", {}).get("title", "the role")
+        job_desc = application.get("job", {}).get("description", "")
+        
+        # Initialize Groq natively with a valid Groq model
+        llm = ChatGroq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            model="openai/gpt-oss-120b",
+        )
+        
+        # Build the prompt
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are an expert technical recruiter and interview coach. Generate 5 highly tailored interview questions (3 technical, 2 behavioral) based on the job description. Format cleanly with the Question in bold, and a brief 'Tip on how to answer' below it. Keep it concise. No intro/outro text."),
+            ("human", f"Role: {job_title}\nJob Description: {job_desc}")
+        ])
+        
+        # Execute the chain
+        chain = prompt | llm
+        response = await chain.ainvoke({})
+        
+        return {
+            "success": True,
+            "prep_guide": response.content
+        }
+        
+    except Exception as error:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(error))
+
+    
+
+# ============================================================
+# USER PROFILE / RESUME
+# ============================================================
+from pydantic import BaseModel
+
+class ProfileRequest(BaseModel):
+    resume_text: str
+
+@router.get("/profile")
+async def get_profile(
+    request: Request,
+    user=Depends(get_current_user)
+):
+    database = request.app.state.database
+    user_doc = await database["users"].find_one({"_id": user["_id"]})
+    resume_text = user_doc.get("resume_text", "") if user_doc else ""
+    
+    return {"success": True, "resume_text": resume_text}
+
+@router.post("/profile")
+async def save_profile(
+    request: Request,
+    data: ProfileRequest,
+    user=Depends(get_current_user)
+):
+    database = request.app.state.database
+    await database["users"].update_one(
+        {"_id": user["_id"]},
+        {"$set": {"resume_text": data.resume_text}},
+        upsert=True
+    )
+    return {"success": True, "message": "Resume saved successfully"}

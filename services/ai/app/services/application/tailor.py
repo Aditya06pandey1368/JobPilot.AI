@@ -1,14 +1,10 @@
 from langchain_groq import ChatGroq
+from langchain_core.output_parsers import PydanticOutputParser
 
 from app.core.config import settings
-
 from app.schemas.job import Job
 from app.schemas.resume import Resume
-
-from app.schemas.application import (
-    TailoredResume,
-)
-
+from app.schemas.application import TailoredResume
 
 model = ChatGroq(
     model="openai/gpt-oss-120b",
@@ -16,11 +12,8 @@ model = ChatGroq(
     temperature=0,
 )
 
-
-tailor_model = model.with_structured_output(
-    TailoredResume
-)
-
+# 1. Create the parser for the TailoredResume schema
+parser = PydanticOutputParser(pydantic_object=TailoredResume)
 
 def tailor_resume(
     job: Job,
@@ -31,75 +24,35 @@ def tailor_resume(
 
     prompt = f"""
 You are an expert technical resume editor.
-
-Tailor the candidate's existing resume
-for the specific job below.
+Tailor the candidate's existing resume for the specific job below.
 
 JOB
-
-Title:
-{job.title}
-
-Company:
-{job.company}
-
-Description:
-{safe_description}
-
+Title: {job.title}
+Company: {job.company}
+Description: {safe_description}
 
 RESUME
-
-Summary:
-{resume.summary}
-
-Skills:
-{", ".join(resume.skills)}
-
-Projects:
-{", ".join(resume.projects)}
-
-Experience:
-{", ".join(resume.experience)}
-
-Education:
-{", ".join(resume.education)}
-
-Certifications:
-{", ".join(resume.certifications)}
-
+Summary: {resume.summary}
+Skills: {", ".join(resume.skills)}
+Projects: {", ".join(resume.projects)}
+Experience: {", ".join(resume.experience)}
+Education: {", ".join(resume.education)}
+Certifications: {", ".join(resume.certifications)}
 
 INSTRUCTIONS
-
-Create recommendations for tailoring the
-existing resume toward this specific job.
-
-You may:
-
-- Rewrite the professional summary using
-  existing facts.
-- Select the most relevant existing skills.
-- Select the most relevant existing projects.
-- Select the most relevant existing experience.
-- Identify job keywords that genuinely match
-  the candidate's background.
+Create recommendations for tailoring the existing resume toward this specific job.
 
 STRICT RULES:
+- Never invent experience, skills, projects, achievements, or certifications.
+- Never add a missing skill as if the candidate already possesses it.
+- Never create fictional experience to improve the match.
+- Only use information actually present in the supplied resume.
 
-- Never invent experience.
-- Never invent skills.
-- Never invent projects.
-- Never invent achievements.
-- Never invent certifications.
-- Never add a missing skill as if the candidate
-  already possesses it.
-- Never create fictional experience to improve
-  the match.
-- Do not add AWS, REST APIs, or any other skill
-  unless it is actually supported by the resume.
-- Only use information actually present in
-  the supplied resume.
-- Never describe the candidate as having a skill unless that skill appears in the resume.
-- If communication skills are missing from the resume, do not describe the candidate as having strong communication skills.
+{parser.get_format_instructions()}
 """
 
-    return tailor_model.invoke(prompt)
+    # 2. Invoke the model
+    response = model.invoke(prompt)
+    
+    # 3. Parse the output safely back into your schema
+    return parser.invoke(response)

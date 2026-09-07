@@ -15,6 +15,7 @@ export default function JobDetailPage() {
   const [resumeText, setResumeText] = useState("");
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [generating, setGenerating] = useState(false); // NEW STATE
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +55,31 @@ export default function JobDetailPage() {
       setError(err.message);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  // NEW FUNCTION: Generate the full application
+  const handleGenerateApplication = async () => {
+    if (!resumeText.trim()) {
+      alert("Please provide resume text.");
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      await fetchAPI("/jobs/application", {
+        method: "POST",
+        body: JSON.stringify({ source, external_id: id, resume_text: resumeText }),
+      });
+      
+      // Successfully generated! Redirect to the Kanban board
+      router.push("/applications");
+    } catch (err: any) {
+      setError(`Application generation failed: ${err.message}`);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -97,15 +123,26 @@ export default function JobDetailPage() {
           className="w-full p-3 border rounded h-28 mb-3 bg-white"
         />
 
-        <button
-          onClick={handleRunAnalysis}
-          disabled={analyzing}
-          className="bg-indigo-600 text-white px-6 py-2.5 rounded font-medium disabled:opacity-50 hover:bg-indigo-700"
-        >
-          {analyzing ? "Analyzing ATS Fit & Trust..." : "Analyze This Job"}
-        </button>
+        {/* BUTTONS CONTAINER */}
+        <div className="flex gap-4">
+          <button
+            onClick={handleRunAnalysis}
+            disabled={analyzing || generating}
+            className="bg-indigo-600 text-white px-6 py-2.5 rounded font-medium disabled:opacity-50 hover:bg-indigo-700"
+          >
+            {analyzing ? "Analyzing ATS Fit & Trust..." : "Analyze This Job"}
+          </button>
 
-        {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+          <button
+            onClick={handleGenerateApplication}
+            disabled={analyzing || generating || !resumeText}
+            className="bg-green-600 text-white px-6 py-2.5 rounded font-medium disabled:opacity-50 hover:bg-green-700"
+          >
+            {generating ? "Crafting AI Application..." : "Generate AI Application"}
+          </button>
+        </div>
+
+        {error && <p className="text-red-500 mt-3 text-sm font-semibold">{error}</p>}
       </div>
 
       {/* Analysis Results Display */}
