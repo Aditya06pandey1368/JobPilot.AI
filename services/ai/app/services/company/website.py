@@ -5,33 +5,27 @@ from app.services.company.url_utils import (
     is_bad_domain,
 )
 
-
-def find_official_website(
-    evidence: CompanyEvidence,
-):
-
+def find_official_website(evidence: CompanyEvidence):
     best_url = None
-
     best_score = -1
 
-    company = (
-        evidence.company_name
-        .lower()
-        .replace(" ", "")
-    )
+    # Split the name and grab the first main word (e.g., "Amazon" from "Amazon Web Services")
+    company_words = evidence.company_name.lower().split()
+    primary_name = company_words[0] if company_words else ""
+    
+    # Clean it up just in case
+    primary_name = primary_name.replace(",", "").replace(".", "")
 
     for item in evidence.evidence_items:
-
         if is_bad_domain(item.url):
             continue
 
         score = 0
-
         domain = get_domain(item.url)
-
         path = get_path(item.url)
 
-        if company in domain.replace(".", ""):
+        # Look for the primary name in the domain
+        if primary_name and primary_name in domain.replace(".", ""):
             score += 50
 
         if path in ("", "/"):
@@ -41,11 +35,8 @@ def find_official_website(
             score += 10
 
         if score > best_score:
-
             best_score = score
-
             best_url = item.url
 
     evidence.official_website = best_url
-
     return evidence

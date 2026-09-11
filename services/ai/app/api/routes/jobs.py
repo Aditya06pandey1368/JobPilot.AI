@@ -640,3 +640,91 @@ async def save_profile(
         upsert=True
     )
     return {"success": True, "message": "Resume saved successfully"}
+
+# ============================================================
+# AUTO-APPLY AGENT
+# ============================================================
+from pydantic import BaseModel
+
+class AutoApplyRequest(BaseModel):
+    job_url: str
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    linkedin: str = ""
+
+# ============================================================
+# AUTO-APPLY AGENT
+# ============================================================
+from pydantic import BaseModel
+
+class AutoApplyRequest(BaseModel):
+    job_url: str
+    first_name: str
+    last_name: str
+    email: str
+    phone: str
+    linkedin: str = ""
+
+# ============================================================
+# AUTO-APPLY AGENT
+# ============================================================
+# ============================================================
+# AUTO-APPLY AGENT
+# ============================================================
+@router.post("/applications/{application_id}/auto-apply")
+async def trigger_auto_apply(
+    request: Request,
+    application_id: str,
+    user=Depends(get_current_user)
+):
+    from bson import ObjectId
+    from fastapi.concurrency import run_in_threadpool
+    from app.services.automation.apply_agent import auto_apply_master
+    
+    database = request.app.state.database
+    
+    # 1. Fetch the application to get the job URL
+    application = await get_application(database, user["_id"], application_id)
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    job_data = application.get("job", {})
+    job_url = job_data.get("apply_url") or job_data.get("source_url") or ""
+    
+    if not job_url:
+        raise HTTPException(status_code=400, detail="No job URL found for this application.")
+
+    # 2. Safely resolve the user document using ObjectId conversion
+    raw_user_id = user.get("_id") or user.get("id")
+    query_id = ObjectId(str(raw_user_id)) if ObjectId.is_valid(str(raw_user_id)) else raw_user_id
+
+    user_doc = user if user.get("name") else await database["users"].find_one({"_id": query_id})
+    if not user_doc and user.get("email"):
+        user_doc = await database["users"].find_one({"email": user["email"]})
+
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # 3. Split the single 'name' field
+    full_name = user_doc.get("name", "").strip()
+    name_parts = full_name.split(" ", 1)
+    first_name = name_parts[0] if len(name_parts) > 0 else ""
+    last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+    real_profile_data = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": user_doc.get("email", ""),
+        "phone": user_doc.get("phone", ""),
+        "linkedin": user_doc.get("linkedin", "")
+    }
+    
+    # 4. Run browser automation in background thread
+    result = await run_in_threadpool(auto_apply_master, job_url, real_profile_data)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Automation failed"))
+        
+    return {"success": True, "message": result.get("message", "Application processed")}

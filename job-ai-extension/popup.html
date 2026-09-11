@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <title>Job AI Assistant</title>
+</head>
+<body>
+  <div class="header">
+    <h3>🤖 Job AI Assistant</h3>
+    <span class="badge">V2.0 Professional</span>
+  </div>
+
+  <!-- Auth Configuration Section -->
+  <div class="card auth-section">
+    <label for="jwtToken">Backend JWT Token:</label>
+    <input type="password" id="jwtToken" placeholder="Paste bearer token here" />
+    <button id="saveTokenBtn" class="btn btn-secondary">Save Token</button>
+  </div>
+
+  <!-- Primary Actions (Separated) -->
+  <div class="actions">
+    <button id="analyzeJobBtn" class="btn btn-primary">🛡️ Analyze Company & Job</button>
+    <button id="analyzeFitBtn" class="btn btn-success">🎯 Check Resume Match & Fit</button>
+  </div>
+
+  <!-- Status & Feedback Area -->
+  <div id="statusMessage" class="status-box hidden"></div>
+
+  <!-- Results Section -->
+  <div id="resultsCard" class="card hidden">
+    <h4 id="resTitle">Role Name</h4>
+    <p id="resCompany" class="text-muted">Company</p>
+    
+    <div id="trustSection" class="hidden">
+      <div class="score-row" style="border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 6px;">
+        <span>🛡️ Company Trust:</span>
+        <strong id="resTrust">0%</strong>
+      </div>
+      
+      <!-- Clickable Company Links Container -->
+      <div id="companyLinks" class="text-muted" style="font-size: 11px; margin-bottom: 6px; display: flex; gap: 8px;">
+        <a id="webLink" href="#" target="_blank" class="hidden">🌐 Website</a>
+        <a id="careerLink" href="#" target="_blank" class="hidden">💼 Careers</a>
+        <a id="linkedInLink" href="#" target="_blank" class="hidden">👥 LinkedIn</a>
+      </div>
+
+      <div id="trustFlags" class="text-muted" style="font-size: 11px; margin-bottom: 6px;"></div>
+    </div>
+
+    <div id="fitSection" class="hidden">
+      <div class="score-row">
+        <span>🎯 Resume Match:</span>
+        <strong id="resScore">0%</strong>
+      </div>
+      <div class="keywords-box">
+        <small>Missing Skills (Gap Analysis):</small>
+        <div id="keywordsList" class="badges"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

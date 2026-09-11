@@ -1,3 +1,10 @@
+import sys
+import asyncio
+
+# Must be at the absolute top of main.py for Windows Playwright compatibility
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.mongodb import create_mongo_client
 from app.db.indexes import create_indexes
+from app.api.routes import extension
 
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.auth import router as auth_router
@@ -69,6 +77,7 @@ app.add_middleware(
 
 app.include_router(jobs_router)
 app.include_router(auth_router)
+app.include_router(extension.router, prefix="/api")
 
 
 @app.get("/")
