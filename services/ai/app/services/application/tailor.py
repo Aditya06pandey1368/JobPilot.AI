@@ -1,3 +1,4 @@
+from typing import Union
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import PydanticOutputParser
 
@@ -17,10 +18,29 @@ parser = PydanticOutputParser(pydantic_object=TailoredResume)
 
 def tailor_resume(
     job: Job,
-    resume: Resume,
+    resume: Union[Resume, str],
 ) -> TailoredResume:
 
     safe_description = job.description[:2500] if job.description else ""
+
+    # Safely handle string vs object
+    if isinstance(resume, str):
+        resume_text = resume
+    else:
+        skills = ", ".join(getattr(resume, "skills", [])) or ""
+        projects = ", ".join(getattr(resume, "projects", [])) or ""
+        experience = ", ".join(getattr(resume, "experience", [])) or ""
+        education = ", ".join(getattr(resume, "education", [])) or ""
+        certifications = ", ".join(getattr(resume, "certifications", [])) or ""
+        
+        resume_text = f"""
+Summary: {getattr(resume, "summary", "")}
+Skills: {skills}
+Projects: {projects}
+Experience: {experience}
+Education: {education}
+Certifications: {certifications}
+"""
 
     prompt = f"""
 You are an expert technical resume editor.
@@ -32,12 +52,7 @@ Company: {job.company}
 Description: {safe_description}
 
 RESUME
-Summary: {resume.summary}
-Skills: {", ".join(resume.skills)}
-Projects: {", ".join(resume.projects)}
-Experience: {", ".join(resume.experience)}
-Education: {", ".join(resume.education)}
-Certifications: {", ".join(resume.certifications)}
+{resume_text}
 
 INSTRUCTIONS
 Create recommendations for tailoring the existing resume toward this specific job.

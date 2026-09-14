@@ -1,3 +1,4 @@
+from typing import Union
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import PydanticOutputParser
 
@@ -17,10 +18,28 @@ parser = PydanticOutputParser(pydantic_object=CoverLetter)
 
 def generate_cover_letter(
     job: Job,
-    resume: Resume,
+    resume: Union[Resume, str],
 ) -> CoverLetter:
 
     safe_description = job.description[:2500] if job.description else ""
+
+    # Safely handle string vs object
+    if isinstance(resume, str):
+        resume_text = resume
+    else:
+        skills = ", ".join(getattr(resume, "skills", [])) or ""
+        projects = ", ".join(getattr(resume, "projects", [])) or ""
+        experience = ", ".join(getattr(resume, "experience", [])) or ""
+        education = ", ".join(getattr(resume, "education", [])) or ""
+        
+        resume_text = f"""
+Name: {getattr(resume, "name", "Candidate")}
+Summary: {getattr(resume, "summary", "")}
+Skills: {skills}
+Projects: {projects}
+Experience: {experience}
+Education: {education}
+"""
 
     prompt = f"""
 Write a concise professional cover letter for this job.
@@ -30,13 +49,8 @@ Title: {job.title}
 Company: {job.company}
 Description: {safe_description}
 
-CANDIDATE
-Name: {resume.name}
-Summary: {resume.summary}
-Skills: {", ".join(resume.skills)}
-Projects: {", ".join(resume.projects)}
-Experience: {", ".join(resume.experience)}
-Education: {", ".join(resume.education)}
+CANDIDATE RESUME
+{resume_text}
 
 RULES
 - Keep it concise and professional.

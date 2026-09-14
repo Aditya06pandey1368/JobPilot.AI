@@ -1,5 +1,6 @@
+from typing import Union
 from langchain_groq import ChatGroq
-from langchain_core.output_parsers import PydanticOutputParser # <-- NEW IMPORT
+from langchain_core.output_parsers import PydanticOutputParser
 
 from app.core.config import settings
 from app.schemas.job import Job
@@ -17,10 +18,29 @@ parser = PydanticOutputParser(pydantic_object=ApplicationAnalysis)
 
 def analyze_application(
     job: Job,
-    resume: Resume,
+    resume: Union[Resume, str],
 ) -> ApplicationAnalysis:
 
     safe_description = job.description[:2500] if job.description else ""
+
+    # Safely handle whether the resume is passed as a string or a structured object
+    if isinstance(resume, str):
+        resume_text = resume
+    else:
+        # Gracefully extract attributes if it's the Pydantic object
+        skills = ", ".join(resume.skills) if hasattr(resume, "skills") and resume.skills else ""
+        projects = ", ".join(resume.projects) if hasattr(resume, "projects") and resume.projects else ""
+        experience = ", ".join(resume.experience) if hasattr(resume, "experience") and resume.experience else ""
+        education = ", ".join(resume.education) if hasattr(resume, "education") and resume.education else ""
+        
+        resume_text = f"""
+Name: {getattr(resume, "name", "Candidate")}
+Summary: {getattr(resume, "summary", "")}
+Skills: {skills}
+Projects: {projects}
+Experience: {experience}
+Education: {education}
+"""
 
     prompt = f"""
 You are an expert job application advisor.
@@ -32,12 +52,7 @@ Company: {job.company}
 Description: {safe_description}
 
 RESUME
-Name: {resume.name}
-Summary: {resume.summary}
-Skills: {", ".join(resume.skills)}
-Projects: {", ".join(resume.projects)}
-Experience: {", ".join(resume.experience)}
-Education: {", ".join(resume.education)}
+{resume_text}
 
 STRICT RULES
 - Never invent experience, skills, projects, or achievements.

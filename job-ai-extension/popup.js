@@ -199,5 +199,18 @@ function displayResumeFitResults(data) {
     });
   }
 
+  // --- NEW COVER LETTER FORMATTING LOGIC ---
+  let rawLetter = data.resume_fit?.cover_letter || "Cover letter generation failed.";
+  
+  let formattedLetter = rawLetter
+      .replace(/\\n/g, '<br>')       // Fix explicit escaped \n
+      .replace(/\n/g, '<br>')        // Fix actual newlines
+      .replace(/\\u202f/g, ' ')      // Fix unicode spaces
+      .replace(/\u202f/g, ' ')       // Fix literal unicode spaces
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Fix markdown bolding
+      
+  // Use innerHTML instead of innerText so the HTML tags render correctly
+  document.getElementById("coverLetterBox").innerHTML = formattedLetter;
+
   resultsCard.classList.remove("hidden");
 }
