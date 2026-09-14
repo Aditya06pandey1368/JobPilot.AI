@@ -116,6 +116,10 @@ async def analyze_resume_fit(request: Request, payload: ExtensionAnalyzeRequest,
     # 4. Extract the graph's output
     analysis = result.get("analysis")
     cover_letter = result.get("cover_letter")
+    tailored_resume = result.get("tailored_resume")
+
+    cover_letter_text = getattr(cover_letter, "content", str(cover_letter))
+    tailored_text = getattr(tailored_resume, "summary", str(tailored_resume))
 
     # Adapt the graph's output to the extension's expected format
     return {
@@ -123,9 +127,9 @@ async def analyze_resume_fit(request: Request, payload: ExtensionAnalyzeRequest,
         "job_title": payload.job_title,
         "company": payload.company_name,
         "resume_fit": {
-            # Adjust these keys based on what your actual analyze_application service returns
-            "overall_fit_score": analysis.fit_score if hasattr(analysis, "fit_score") else 85,
-            "missing_skills": analysis.missing_skills if hasattr(analysis, "missing_skills") else [],
-            "cover_letter": cover_letter.body if hasattr(cover_letter, "body") else str(cover_letter)
+            "overall_fit_score": getattr(analysis, "fit_score", 85),
+            "missing_skills": getattr(analysis, "missing_skills", []),
+            "cover_letter": cover_letter_text,
+            "tailored_resume": tailored_text
         }
     }

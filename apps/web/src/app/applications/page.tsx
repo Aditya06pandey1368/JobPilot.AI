@@ -3,14 +3,13 @@ import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import Link from "next/link";
 
-// Match the valid statuses from your backend ApplicationStatusRequest
 const COLUMNS = [
-  { id: "saved", title: "Saved", color: "bg-gray-200" },
-  { id: "applied", title: "Applied", color: "bg-blue-200" },
-  { id: "assessment", title: "Assessment", color: "bg-yellow-200" },
-  { id: "interview", title: "Interview", color: "bg-purple-200" },
-  { id: "offer", title: "Offer", color: "bg-green-200" },
-  { id: "rejected", title: "Rejected", color: "bg-red-200" },
+  { id: "saved", title: "Saved", headerColor: "bg-slate-800 text-white", bodyColor: "bg-slate-100/50" },
+  { id: "applied", title: "Applied", headerColor: "bg-blue-600 text-white", bodyColor: "bg-blue-50/50" },
+  { id: "assessment", title: "Assessment", headerColor: "bg-yellow-500 text-white", bodyColor: "bg-yellow-50/50" },
+  { id: "interview", title: "Interview", headerColor: "bg-purple-600 text-white", bodyColor: "bg-purple-50/50" },
+  { id: "offer", title: "Offer", headerColor: "bg-emerald-600 text-white", bodyColor: "bg-emerald-50/50" },
+  { id: "rejected", title: "Rejected", headerColor: "bg-red-500 text-white", bodyColor: "bg-red-50/50" },
 ];
 
 export default function Applications() {
@@ -18,7 +17,6 @@ export default function Applications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch applications on load
   useEffect(() => {
     fetchAPI("/jobs/applications")
       .then((data) => {
@@ -26,30 +24,22 @@ export default function Applications() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error(err);
         setError("Failed to load applications.");
         setLoading(false);
       });
   }, []);
 
-  // Native HTML5 Drag Start
   const handleDragStart = (e: React.DragEvent, appId: string) => {
     e.dataTransfer.setData("applicationId", appId);
   };
 
-  // Allow dropping by preventing default behavior
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
-  // Handle the Drop event
   const handleDrop = async (e: React.DragEvent, newStatus: string) => {
     e.preventDefault();
     const appId = e.dataTransfer.getData("applicationId");
-
     if (!appId) return;
 
-    // Optimistically update the UI immediately so it feels fast
     const previousApps = [...applications];
     setApplications((prev) =>
       prev.map((app) =>
@@ -57,7 +47,6 @@ export default function Applications() {
       )
     );
 
-    // Call your FastAPI PATCH endpoint
     try {
       await fetchAPI(`/jobs/applications/${appId}/status`, {
         method: "PATCH",
@@ -65,32 +54,40 @@ export default function Applications() {
       });
     } catch (err: any) {
       alert(`Failed to update status: ${err.message}`);
-      // Revert if the API call failed
       setApplications(previousApps);
     }
   };
 
-  if (loading) return <p className="p-10 text-gray-600">Loading your Kanban board...</p>;
-  if (error) return <p className="p-10 text-red-500">{error}</p>;
+  if (loading) return (
+    <div className="flex flex-col justify-center items-center h-screen bg-slate-50">
+      <div className="flex gap-3">
+        <div className="w-5 h-5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+        <div className="w-5 h-5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+        <div className="w-5 h-5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      </div>
+      <p className="mt-4 text-indigo-900 font-bold uppercase tracking-widest text-sm animate-pulse">Loading Kanban Board...</p>
+    </div>
+  );
+  if (error) return <p className="p-10 text-red-500 font-bold">{error}</p>;
 
   return (
-    <div className="max-w-7xl mx-auto p-6 h-screen flex flex-col text-black">
-      <div className="flex justify-between items-center mb-8 shrink-0">
-        <h1 className="text-3xl font-bold">Job Application Tracker</h1>
+    <div className="max-w-[1400px] mx-auto p-6 h-screen flex flex-col text-black bg-slate-50">
+      <div className="flex justify-between items-center mb-10 shrink-0 pt-6">
+        <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-indigo-900">
+          Application Tracker
+        </h1>
         <div className="flex gap-4">
-          <Link href="/analytics" className="bg-indigo-100 text-indigo-700 px-4 py-2 rounded font-bold hover:bg-indigo-200 transition-colors">
+          <Link href="/analytics" className="bg-white border-2 border-indigo-100 text-indigo-700 px-6 py-2.5 rounded-full font-bold shadow-sm hover:shadow-lg hover:border-indigo-300 hover:-translate-y-0.5 active:scale-95 transition-all">
             📊 View Analytics
           </Link>
-          <Link href="/" className="text-blue-600 hover:underline font-medium px-4 py-2">
-            &larr; Back to Search
+          <Link href="/" className="bg-indigo-600 text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:shadow-xl hover:bg-indigo-700 hover:-translate-y-0.5 active:scale-95 transition-all">
+            &larr; Discover Jobs
           </Link>
         </div>
       </div>
 
-      {/* Kanban Board Container */}
-      <div className="flex gap-6 overflow-x-auto pb-4 h-full items-start">
+      <div className="flex gap-6 overflow-x-auto pb-8 h-full items-start snap-x custom-scrollbar">
         {COLUMNS.map((col) => {
-          // Filter jobs that belong in this column
           const columnJobs = applications.filter((app) => (app.status || "saved") === col.id);
 
           return (
@@ -98,60 +95,58 @@ export default function Applications() {
               key={col.id}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.id)}
-              className="flex flex-col bg-gray-50 rounded-lg w-80 min-w-[20rem] h-full max-h-[75vh] border shadow-sm"
+              className={`flex flex-col rounded-3xl w-[340px] min-w-[340px] h-full max-h-[75vh] border border-white shadow-xl snap-center transition-colors duration-300 ${col.bodyColor} backdrop-blur-xl`}
             >
-              {/* Column Header */}
-              <div className={`px-4 py-3 border-b rounded-t-lg font-bold flex justify-between items-center ${col.color}`}>
-                <span className="capitalize">{col.title}</span>
-                <span className="bg-white/50 text-gray-800 text-xs px-2 py-1 rounded-full">
+              <div className={`px-6 py-4 rounded-t-3xl font-black tracking-wide flex justify-between items-center shadow-sm ${col.headerColor}`}>
+                <span className="uppercase text-sm tracking-widest">{col.title}</span>
+                <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md">
                   {columnJobs.length}
                 </span>
               </div>
 
-              {/* Column Cards Container */}
-              <div className="p-3 overflow-y-auto flex-1 space-y-3">
+              <div className="p-4 overflow-y-auto flex-1 space-y-4">
                 {columnJobs.map((app, idx) => {
                   const appId = app._id || app.id; 
                   
-                  // Safely check multiple possible locations for the data depending on your DB structure
-                  const jobTitle = app.job?.title || app.analysis?.job_title || "Saved Job";
-                  const companyName = app.job?.company || app.analysis?.company || "Company";
-                  const fitScore = app.fit_score || app.analysis?.overall_score || app.analysis?.fit_score || 0;
+                  // FIX: Safely extract deeply nested LangGraph data
+                  const aiReport = app.application || app;
+                  const analysis = aiReport.analysis || app.analysis;
+                  
+                  const jobTitle = app.job?.title || analysis?.job_title || "Saved Job";
+                  const companyName = app.job?.company || analysis?.company || "Company";
+                  const fitScore = analysis?.fit_score || analysis?.overall_score || app.fit_score || 0;
 
                   return (
                     <div
                       key={idx}
                       draggable
                       onDragStart={(e) => handleDragStart(e, appId)}
-                      className="bg-white p-4 rounded shadow border border-gray-200 cursor-grab active:cursor-grabbing hover:border-blue-400 transition-colors"
+                      className="group bg-white p-5 rounded-2xl shadow-sm border border-slate-100 cursor-grab active:cursor-grabbing hover:shadow-xl hover:-translate-y-1 hover:border-indigo-200 transition-all duration-300"
                     >
-                      <h3 className="font-bold text-gray-900 leading-tight truncate">
+                      <h3 className="font-bold text-slate-900 text-lg leading-tight truncate group-hover:text-indigo-600 transition-colors">
                         {jobTitle}
                       </h3>
-                      <p className="text-sm font-medium text-gray-600 mb-3 truncate">
+                      <p className="text-sm font-semibold text-slate-500 mb-4 truncate">
                         {companyName}
                       </p>
                       
-                      <div className="flex justify-between items-center text-xs mt-2">
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-semibold">
-                          ATS Fit: {fitScore}%
+                      <div className="flex justify-between items-center mt-2 border-t pt-4">
+                        <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-bold text-xs border border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-700 transition-colors">
+                          Fit: {fitScore}%
                         </span>
-                        
-                        {/* Always show the link, regardless of job_id existing */}
                         <Link 
                            href={`/applications/${appId}`} 
-                           className="text-blue-600 hover:text-blue-800 hover:underline font-bold"
+                           className="text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-3 py-1 rounded-full hover:bg-indigo-100 transition-colors"
                         >
-                          View Details &rarr;
+                          Details &rarr;
                         </Link>
                       </div>
                     </div>
                   );
                 })}
                 
-                {/* Empty state for column */}
                 {columnJobs.length === 0 && (
-                  <div className="text-center p-4 border-2 border-dashed border-gray-200 rounded text-gray-400 text-sm">
+                  <div className="text-center p-8 border-2 border-dashed border-slate-300/50 rounded-2xl text-slate-400 font-medium">
                     Drop jobs here
                   </div>
                 )}

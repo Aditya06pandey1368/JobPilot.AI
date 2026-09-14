@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Request
+from pydantic import BaseModel
 from bson import ObjectId
 import PyPDF2
 import io
@@ -6,15 +7,19 @@ from app.api.dependencies import get_current_user
 from app.core.config import settings
 from langchain_groq import ChatGroq
 
+# This schema validates the JSON data sent when clicking the "Save Details" button
+class UpdateDetailsRequest(BaseModel):
+    details: str
+
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
-# Removed with_structured_output and Pydantic! Just a fast, standard LLM.
 # Changed the model to one we know your API key supports!
 extraction_model = ChatGroq(
     model="openai/gpt-oss-20b", 
     api_key=settings.groq_api_key, 
     temperature=0
 )
+
 @router.post("/upload-resume")
 async def upload_resume(request: Request, file: UploadFile = File(...), user=Depends(get_current_user)):
     if not file.filename.endswith(".pdf"):
@@ -61,4 +66,28 @@ async def upload_resume(request: Request, file: UploadFile = File(...), user=Dep
         "message": "Resume processed successfully",
         "skills": skills_text,
         "resume_text": resume_text.strip()
+    }
+
+# NEW ROUTE: Saves the manually edited details to the database
+@router.post("/update-details")
+async def update_details(
+    request: Request, 
+    payload: UpdateDetailsRequest, 
+    user=Depends(get_current_user)
+):
+    database = request.app.state.database
+    user_id = ObjectId(str(user.get("_id") or user.get("id")))
+    
+    # Save the edited text to both fields to ensure the graph uses the latest version
+    await database["users"].update_one(
+        {"_id": user_id},
+        {"$set": {
+            "resume_text": payload.details.strip(),
+            "skills": payload.details.strip()
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Details saved successfully"
     }

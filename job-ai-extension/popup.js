@@ -212,5 +212,16 @@ function displayResumeFitResults(data) {
   // Use innerHTML instead of innerText so the HTML tags render correctly
   document.getElementById("coverLetterBox").innerHTML = formattedLetter;
 
+  let rawTailored = data.resume_fit?.tailored_resume || "No tailored resume generated.";
+  
+  // Format it assuming it comes back as a list or string
+  if (Array.isArray(rawTailored)) {
+      rawTailored = rawTailored.map(bullet => `• ${bullet}`).join('<br>');
+  } else {
+      rawTailored = String(rawTailored).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+  
+  document.getElementById("tailoredResumeBox").innerHTML = rawTailored;
+
   resultsCard.classList.remove("hidden");
 }

@@ -12,6 +12,7 @@ export default function Home() {
   const [resumeText, setResumeText] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -23,11 +24,9 @@ export default function Home() {
     if (savedResume) setResumeText(savedResume);
   }, [router]);
 
-  // Handle PDF Upload to FastAPI Backend
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -36,17 +35,11 @@ export default function Home() {
       const token = localStorage.getItem("token");
       const res = await fetch("http://localhost:8000/api/profile/upload-resume", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
+        headers: { "Authorization": `Bearer ${token}` },
         body: formData,
       });
-
       const data = await res.json();
-      console.log("Upload response data:", data); // <--- CHECK YOUR BROWSER CONSOLE (F12) FOR THIS
-
       if (res.ok && data.success) {
-        // Fallback to resume_text if skills is empty
         const textToDisplay = data.skills || data.resume_text || "";
         setResumeText(textToDisplay);
         sessionStorage.setItem("current_resume", textToDisplay);
@@ -55,7 +48,6 @@ export default function Home() {
         alert(`❌ Error: ${data.detail || "Upload failed"}`);
       }
     } catch (error) {
-      console.error(error);
       alert("❌ Failed to upload resume.");
     } finally {
       setUploading(false);
@@ -63,12 +55,36 @@ export default function Home() {
     }
   };
 
+  const handleSaveDetails = async () => {
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8000/api/profile/update-details", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ details: resumeText }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        sessionStorage.setItem("current_resume", resumeText);
+        alert("✅ Details saved successfully!");
+      } else {
+        alert(`❌ Error: ${data.detail || "Failed to save"}`);
+      }
+    } catch (error) {
+      alert("❌ Failed to save details.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     sessionStorage.setItem("current_resume", resumeText);
-
     try {
       const data = await fetchAPI("/jobs/search", {
         method: "POST",
@@ -87,139 +103,148 @@ export default function Home() {
     router.push("/login");
   };
 
-  if (!user) return <div className="flex justify-center items-center h-screen"><p className="text-lg text-gray-600 animate-pulse">Loading profile...</p></div>;
+  if (!user) return (
+    <div className="flex justify-center items-center h-screen bg-slate-50">
+       <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+    </div>
+  );
 
   return (
-    <div className="max-w-5xl mx-auto p-6 text-black">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 border-b pb-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome, {user.name}</h1>
-        <div className="space-x-4 flex items-center">
-          <Link href="/applications" className="text-blue-600 font-medium hover:underline">
-            My Applications
-          </Link>
-          <button onClick={logout} className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-md font-medium hover:bg-red-100 transition-colors">
-            Logout
-          </button>
+    <div className="min-h-screen bg-slate-50 pb-16">
+      <div className="bg-gradient-to-r from-slate-900 to-indigo-900 text-white pt-8 pb-32 px-6 rounded-b-[3rem] shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{user.name}</span>
+            </h1>
+            <p className="text-indigo-200 font-medium text-lg">Let's find your next big opportunity.</p>
+          </div>
+          <div className="flex gap-4">
+            <Link href="/applications" className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-white/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+              <span>📋</span> Tracker
+            </Link>
+            <button onClick={logout} className="bg-rose-500/10 border border-rose-500/30 text-rose-300 px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-rose-500 hover:text-white hover:scale-105 active:scale-95 transition-all">
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-        {/* Left Column: Profile & Resume Management */}
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-white border rounded-xl p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Your Profile Context</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Upload your resume PDF. Our AI will extract your skills here and save your full background to the database for extension analysis.
-            </p>
-            
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              id="resumeUpload"
-              accept="application/pdf"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-            
-            {/* Upload Button */}
-            <button
-              type="button"
-              onClick={() => document.getElementById("resumeUpload")?.click()}
-              disabled={uploading}
-              className="w-full mb-4 bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-2.5 rounded-lg font-semibold hover:bg-indigo-100 transition-colors flex justify-center items-center disabled:opacity-70"
-            >
-              {uploading ? (
-                <span className="animate-pulse">⏳ Parsing PDF...</span>
-              ) : (
-                <span>📄 Upload Resume (PDF)</span>
-              )}
-            </button>
-
-            {/* Editable Skills Area */}
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Extracted Skills
-            </label>
-            <textarea
-              placeholder="Upload a PDF to auto-extract, or type skills manually (e.g., Python, React, AWS)..."
-              className="w-full p-3 border rounded-lg h-32 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              value={resumeText}
-              onChange={(e) => setResumeText(e.target.value)}
-            />
-            <p className="text-xs text-gray-400 mt-2">
-              These skills influence your AI job search relevance.
-            </p>
-          </div>
-        </div>
-
-        {/* Right Column: Job Search */}
-        <div className="md:col-span-2">
-          <form onSubmit={handleSearch} className="bg-gray-50 border p-6 rounded-xl shadow-inner mb-6">
-            <h2 className="text-2xl font-bold mb-2 text-gray-800">Discover Jobs</h2>
-            <p className="text-sm text-gray-600 mb-6">Search for roles across India using semantic matching.</p>
-            
-            <div className="flex gap-3">
-              <input
-                type="text"
-                placeholder="e.g., Senior Backend Engineer in Python..."
-                required
-                className="flex-1 p-3 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+      <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <h2 className="text-2xl font-black mb-3 text-slate-900">Profile Context</h2>
+              <p className="text-sm text-slate-500 mb-6 font-medium">
+                Upload your resume PDF. Our AI will extract your details here and save your full background to the database for extension analysis.
+              </p>
+              
+              <input type="file" id="resumeUpload" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
               <button
-                disabled={loading}
-                type="submit"
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold shadow-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors whitespace-nowrap"
+                type="button"
+                onClick={() => document.getElementById("resumeUpload")?.click()}
+                disabled={uploading}
+                className="w-full mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border-2 border-indigo-200 border-dashed px-4 py-4 rounded-2xl font-black tracking-wide hover:bg-indigo-100 hover:border-indigo-300 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 flex justify-center items-center"
               >
-                {loading ? "Scanning..." : "Search"}
+                {uploading ? <span className="animate-pulse">⏳ Parsing PDF...</span> : <span>📄 Upload Resume (PDF)</span>}
+              </button>
+
+              <label className="block text-sm font-black text-slate-900 mb-2 uppercase tracking-wider">
+                Extracted Details
+              </label>
+              <textarea
+                placeholder="Upload a PDF to auto-extract, or type details manually..."
+                className="w-full p-4 border-2 border-slate-200 rounded-2xl h-48 bg-slate-50 text-slate-700 font-medium focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all resize-none mb-2"
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+              />
+              <p className="text-xs text-slate-400 font-medium mb-6">
+                These details directly influence your AI job search relevance.
+              </p>
+
+              <button
+                onClick={handleSaveDetails}
+                disabled={isSaving || !resumeText}
+                className="w-full bg-indigo-600 text-white px-4 py-3.5 rounded-xl font-black shadow-lg hover:shadow-xl hover:bg-indigo-700 hover:-translate-y-0.5 active:scale-95 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed"
+              >
+                {isSaving ? <span className="animate-pulse">Saving...</span> : "Save Details"}
               </button>
             </div>
-          </form>
+          </div>
 
-          {/* Results Listing */}
-          <div className="space-y-4">
-            {jobs.length > 0 && (
-              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                Available Listings <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full ml-2">{jobs.length}</span>
-              </h3>
-            )}
-
-            {jobs.length === 0 && !loading && (
-              <div className="text-center py-16 bg-white border rounded-xl border-dashed">
-                <div className="text-4xl mb-3">🔍</div>
-                <p className="text-gray-600 font-medium text-lg">
-                  No jobs passed the AI relevance filter.
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Try a broader search query or update your profile skills.
-                </p>
+          <div className="lg:col-span-2">
+            <form onSubmit={handleSearch} className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 mb-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <h2 className="text-3xl font-black mb-2 text-slate-900">Discover Jobs</h2>
+              <p className="text-slate-500 mb-8 font-medium">Search for roles across India using Deep Semantic Matching.</p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  placeholder="e.g., Senior Backend Engineer in Python..."
+                  required
+                  className="flex-1 p-4 border-2 border-slate-200 rounded-2xl bg-slate-50 text-lg font-medium focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white transition-all outline-none"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <button
+                  disabled={loading}
+                  type="submit"
+                  className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black tracking-wide shadow-lg hover:shadow-xl hover:bg-indigo-600 hover:-translate-y-0.5 active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                >
+                  {loading ? <span className="animate-pulse">Scanning...</span> : "Search"}
+                </button>
               </div>
-            )}
+            </form>
 
-            {jobs.map((item, idx) => {
-              const job = item.job || item;
-              return (
-                <div key={idx} className="border p-5 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                  <div>
-                    <h4 className="text-xl font-bold text-gray-900">{job.title}</h4>
-                    <p className="text-md font-semibold text-indigo-600 mt-1">{job.company}</p>
-                    <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                      <span>📍 {job.location}</span> 
-                      <span>&bull;</span> 
-                      <span className="capitalize border px-2 py-0.5 rounded text-xs bg-gray-100">{job.source}</span>
-                    </p>
-                  </div>
-
-                  <Link
-                    href={`/jobs/${job.source}/${job.external_id}`}
-                    className="bg-white text-blue-600 border border-blue-600 px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-center whitespace-nowrap"
-                  >
-                    Analyze Role &rarr;
-                  </Link>
+            <div className="space-y-4">
+              {jobs.length > 0 && (
+                <div className="flex items-center gap-3 mb-6">
+                  <h3 className="text-xl font-black text-slate-900">Live Listings</h3>
+                  <span className="bg-indigo-100 text-indigo-800 text-sm font-bold px-3 py-1 rounded-full">{jobs.length} Matches</span>
                 </div>
-              );
-            })}
+              )}
+
+              {jobs.length === 0 && !loading && (
+                <div className="text-center py-20 bg-white/50 backdrop-blur rounded-3xl border-2 border-dashed border-slate-300">
+                  <div className="text-6xl mb-4 opacity-50">📡</div>
+                  <p className="text-slate-700 font-bold text-xl">No jobs passed the AI relevance filter.</p>
+                  <p className="text-slate-500 font-medium mt-2">Try a broader search query or update your profile details.</p>
+                </div>
+              )}
+
+              {loading && (
+                 <div className="space-y-4">
+                    {[1,2,3].map(i => (
+                       <div key={i} className="h-32 bg-slate-200 rounded-2xl animate-pulse"></div>
+                    ))}
+                 </div>
+              )}
+
+              {!loading && jobs.map((item, idx) => {
+                const job = item.job || item;
+                return (
+                  <div key={idx} className="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-200 transition-all duration-300 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
+                    <div>
+                      <h4 className="text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</h4>
+                      <p className="text-lg font-bold text-slate-600 mt-1">{job.company}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-3">
+                        <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-md text-sm font-bold">📍 {job.location}</span> 
+                        <span className="bg-indigo-50 text-indigo-700 uppercase tracking-widest px-3 py-1 rounded-md text-xs font-black">{job.source}</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/jobs/${job.source}/${job.external_id}`}
+                      className="bg-white text-indigo-600 border-2 border-indigo-100 px-8 py-3 rounded-full font-black shadow-sm group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 group-hover:shadow-lg active:scale-95 transition-all text-center whitespace-nowrap"
+                    >
+                      Analyze Role &rarr;
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

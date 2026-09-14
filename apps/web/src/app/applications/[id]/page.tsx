@@ -12,10 +12,8 @@ export default function ApplicationDetailsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [isEditing, setIsEditing] = useState(false);
   const [coverLetterContent, setCoverLetterContent] = useState("");
-
   const [prepLoading, setPrepLoading] = useState(false);
   const [prepData, setPrepData] = useState<string | null>(null);
 
@@ -24,7 +22,6 @@ export default function ApplicationDetailsPage() {
       .then((res) => {
         const root = res.application || res;
         const aiReport = root.application || root;
-
         const processedData = {
           ...root,
           analysis: aiReport.analysis || root.analysis,
@@ -34,14 +31,11 @@ export default function ApplicationDetailsPage() {
           status: root.status || "saved",
           job: root.job,
         };
-        
         setData(processedData);
-
         const rawLetter = processedData.cover_letter;
         const extractedText = typeof rawLetter === "string" 
           ? rawLetter 
           : rawLetter?.content || rawLetter?.body || rawLetter?.letter || "No cover letter generated.";
-        
         setCoverLetterContent(extractedText);
         setLoading(false);
       })
@@ -63,7 +57,16 @@ export default function ApplicationDetailsPage() {
     }
   };
 
-  if (loading) return <p className="p-10 text-gray-600 font-medium">Loading your AI application materials...</p>;
+  if (loading) return (
+    <div className="flex flex-col justify-center items-center h-screen bg-gray-50">
+      <div className="flex gap-2 mb-4">
+        <div className="w-4 h-4 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+        <div className="w-4 h-4 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+        <div className="w-4 h-4 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      </div>
+      <p className="text-gray-600 font-medium tracking-widest uppercase text-sm animate-pulse">Loading AI Materials...</p>
+    </div>
+  );
   if (error || !data) return <p className="p-10 text-red-500 font-medium">Error: {error || "Application not found"}</p>;
 
   const title = data.analysis?.job_title || data.job?.title || "Role";
@@ -72,129 +75,129 @@ export default function ApplicationDetailsPage() {
   const checklistItems = data.checklist?.items || (Array.isArray(data.checklist) ? data.checklist : []);
   const summary = data.tailored_resume?.summary;
   const keywords = data.tailored_resume?.keywords_to_emphasize || [];
-  const improvements = data.analysis?.improvement_suggestions || [];
-  
-  // The job URL to redirect to
   const targetJobUrl = data.job?.apply_url || data.job?.source_url || "#";
 
   return (
-    <div className="max-w-6xl mx-auto p-6 text-black print:p-0">
-      
-      <div className="flex justify-between items-center mb-6 print:hidden">
-        <Link href="/applications" className="text-blue-600 hover:underline font-medium">
-          &larr; Back to Kanban Board
-        </Link>
-        
-        <div className="flex gap-3">
-          {/* NEW: Simple External Link to the Job */}
-          <a 
-            href={targetJobUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded shadow transition-colors font-medium flex items-center gap-2"
-          >
-            Apply Now &nearr;
-          </a>
-
-          <button 
-            onClick={generateInterviewPrep}
-            disabled={prepLoading}
-            className={`${prepLoading ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'} text-white px-4 py-2 rounded shadow transition-colors font-medium flex items-center gap-2`}
-          >
-            {prepLoading ? "⏳ Generating..." : "🎤 Prep for Interview"}
-          </button>
-          
-          <button 
-            onClick={() => window.print()}
-            className="bg-gray-900 text-white px-4 py-2 rounded shadow hover:bg-gray-800 transition-colors font-medium"
-          >
-            📄 Export to PDF
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white border rounded-lg p-6 shadow-sm mb-6 print:shadow-none print:border-none print:px-0">
-        <h1 className="text-3xl font-bold mb-1 text-gray-900">{title}</h1>
-        <p className="text-lg text-gray-700 font-medium">{company}</p>
-        <div className="mt-4 flex gap-3 print:hidden">
-          <span className="bg-green-100 text-green-800 px-3 py-1 rounded font-semibold text-sm">
-            ATS Fit: {fitScore}%
-          </span>
-          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded font-semibold capitalize text-sm">
-            Status: {data.status}
-          </span>
-        </div>
-      </div>
-
-      {prepData && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 shadow-sm mb-6 print:hidden">
-          <h2 className="text-2xl font-bold mb-4 text-purple-900">Your Custom Interview Guide</h2>
-          <div className="whitespace-pre-wrap text-sm text-gray-800 bg-white p-6 border rounded shadow-inner leading-relaxed">
-            {prepData}
+    <div className="min-h-screen bg-slate-50 pb-12">
+      <div className="max-w-6xl mx-auto p-6 pt-10 text-black print:p-0">
+        <div className="flex justify-between items-center mb-8 print:hidden">
+          <Link href="/applications" className="group flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-bold transition-colors">
+            <span className="transform group-hover:-translate-x-1 transition-transform">&larr;</span> Back to Kanban
+          </Link>
+          <div className="flex gap-4">
+            <a 
+              href={targetJobUrl} target="_blank" rel="noopener noreferrer"
+              className="bg-gradient-to-r from-orange-500 to-rose-500 text-white px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all font-bold flex items-center gap-2"
+            >
+              Apply Now ↗
+            </a>
+            <button 
+              onClick={generateInterviewPrep} disabled={prepLoading}
+              className={`px-6 py-2.5 rounded-full shadow-lg font-bold flex items-center gap-2 transition-all ${prepLoading ? 'bg-purple-300 scale-95 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-xl hover:scale-105 active:scale-95'}`}
+            >
+              {prepLoading ? <span className="animate-pulse">⏳ Generating...</span> : "🎤 Prep for Interview"}
+            </button>
+            <button 
+              onClick={() => window.print()}
+              className="bg-white text-slate-800 border-2 border-slate-200 px-6 py-2.5 rounded-full shadow-sm hover:border-slate-800 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all font-bold flex items-center gap-2"
+            >
+              📄 PDF
+            </button>
           </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <div className="bg-gray-50 border rounded-lg p-6 shadow-sm print:bg-white print:border-none print:shadow-none print:p-0">
-            <div className="flex justify-between items-center mb-4 print:hidden">
-                <h2 className="text-xl font-bold text-gray-900">Tailored Cover Letter</h2>
-                <button 
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 font-semibold"
-                >
-                    {isEditing ? "Save & View" : "✏️ Edit"}
-                </button>
+        <div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100 mb-8 transform hover:-translate-y-1 transition-transform duration-300 print:shadow-none print:border-none print:px-0">
+          <h1 className="text-4xl font-black text-slate-900 mb-2">{title}</h1>
+          <p className="text-2xl text-slate-600 font-medium mb-6">{company}</p>
+          <div className="flex gap-4 print:hidden">
+            <span className="bg-emerald-100/80 text-emerald-800 border border-emerald-200 px-4 py-1.5 rounded-full font-bold tracking-wide">
+              ATS Fit: {fitScore}%
+            </span>
+            <span className="bg-amber-100/80 text-amber-800 border border-amber-200 px-4 py-1.5 rounded-full font-bold capitalize tracking-wide">
+              Status: {data.status}
+            </span>
+          </div>
+        </div>
+
+        {prepData && (
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-3xl p-8 shadow-2xl mb-8 print:hidden animate-fade-in-up">
+            <h2 className="text-2xl font-black mb-6 text-white flex items-center gap-3">
+              <span className="bg-white/20 p-2 rounded-xl">🎯</span> Your Custom Interview Guide
+            </h2>
+            <div className="whitespace-pre-wrap text-slate-800 bg-white/95 backdrop-blur p-8 rounded-2xl shadow-inner leading-relaxed font-medium">
+              {prepData}
             </div>
-            
-            {isEditing ? (
-                <textarea 
-                    value={coverLetterContent}
-                    onChange={(e) => setCoverLetterContent(e.target.value)}
-                    className="w-full h-96 p-4 border rounded shadow-inner text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 print:hidden"
-                />
-            ) : (
-                <div className="whitespace-pre-wrap text-sm text-gray-800 bg-white p-6 border rounded shadow-inner leading-relaxed print:border-none print:shadow-none print:p-0 print:text-black">
-                    {coverLetterContent}
-                </div>
-            )}
           </div>
-        </div>
+        )}
 
-        <div className="space-y-6 print:hidden">
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4 text-blue-900">Resume Adjustments</h2>
-            {summary && (
-              <>
-                <h3 className="font-semibold text-blue-800 mt-2 mb-2 text-sm">Recommended Summary</h3>
-                <p className="text-sm bg-white p-3 rounded border text-gray-700 mb-4 leading-relaxed">{summary}</p>
-              </>
-            )}
-            {keywords.length > 0 && (
-              <>
-                <h3 className="font-semibold text-blue-800 mt-4 mb-2 text-sm">Keywords to Emphasize</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {keywords.map((kw: string, i: number) => (
-                    <span key={i} className="bg-blue-200 text-blue-900 text-xs px-2 py-1 rounded font-medium">{kw}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 hover:shadow-2xl transition-shadow duration-300">
+              <div className="flex justify-between items-center mb-6 print:hidden">
+                  <h2 className="text-2xl font-bold text-slate-900">Tailored Cover Letter</h2>
+                  <button 
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="text-sm bg-indigo-50 text-indigo-700 px-4 py-2 rounded-full hover:bg-indigo-100 font-bold transition-colors active:scale-95"
+                  >
+                      {isEditing ? "Save & View" : "✏️ Edit"}
+                  </button>
+              </div>
+              
+              {isEditing ? (
+                  <textarea 
+                      value={coverLetterContent}
+                      onChange={(e) => setCoverLetterContent(e.target.value)}
+                      className="w-full h-[500px] p-6 border-2 border-indigo-100 rounded-2xl shadow-inner text-slate-700 leading-relaxed focus:outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all print:hidden"
+                  />
+              ) : (
+                  <div className="whitespace-pre-wrap text-slate-700 leading-relaxed p-2 font-medium">
+                      {coverLetterContent}
+                  </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-8 print:hidden">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-lg border border-blue-100/50 hover:-translate-y-1 transition-transform duration-300">
+              <h2 className="text-2xl font-bold mb-6 text-blue-900 flex items-center gap-2">
+                <span className="text-3xl">✨</span> Resume Adjustments
+              </h2>
+              {summary && (
+                <div className="mb-6 bg-white/60 p-6 rounded-2xl shadow-sm border border-white">
+                  <h3 className="font-bold text-blue-900 mb-3 uppercase tracking-wider text-xs">Recommended Summary</h3>
+                  <p className="text-slate-700 leading-relaxed font-medium">{summary}</p>
+                </div>
+              )}
+              {keywords.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-blue-900 mb-3 uppercase tracking-wider text-xs">Keywords to Emphasize</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {keywords.map((kw: string, i: number) => (
+                      <span key={i} className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-sm hover:scale-105 transition-transform cursor-default">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {checklistItems.length > 0 && (
+              <div className="bg-white rounded-3xl p-8 shadow-lg border border-slate-100 hover:-translate-y-1 transition-transform duration-300">
+                <h2 className="text-2xl font-bold mb-6 text-slate-900 flex items-center gap-2">
+                  <span className="text-indigo-500">☑</span> Pre-Application Checklist
+                </h2>
+                <ul className="space-y-4">
+                  {checklistItems.map((item: string, i: number) => (
+                    <li key={i} className="flex items-start gap-4 text-slate-700 font-medium group">
+                      <div className="mt-1 w-5 h-5 rounded border-2 border-indigo-200 group-hover:border-indigo-500 group-hover:bg-indigo-50 flex items-center justify-center transition-colors"></div>
+                      <span className="flex-1 group-hover:text-indigo-900 transition-colors">{item}</span>
+                    </li>
                   ))}
-                </div>
-              </>
+                </ul>
+              </div>
             )}
           </div>
-
-          {checklistItems.length > 0 && (
-            <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-4 text-indigo-900">Pre-Application Checklist</h2>
-              <ul className="space-y-2">
-                {checklistItems.map((item: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-indigo-900">
-                    <span className="text-indigo-600 font-bold">☑</span> {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
     </div>
