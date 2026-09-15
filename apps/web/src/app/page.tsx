@@ -21,16 +21,13 @@ export default function Home() {
       .then((data) => setUser(data))
       .catch(() => router.push("/login"));
 
-    // 2. Fetch the permanently saved resume details from the database
-    fetchAPI("/jobs/profile")
+    // 2. Fetch the permanently saved resume details from our NEW backend route
+    fetchAPI("/profile/details")
       .then((data) => {
         if (data.resume_text) {
           setResumeText(data.resume_text);
+          // Keep session storage synced just in case other components need it quickly
           sessionStorage.setItem("current_resume", data.resume_text);
-        } else {
-          // Fallback to session storage only if database is empty
-          const savedResume = sessionStorage.getItem("current_resume");
-          if (savedResume) setResumeText(savedResume);
         }
       })
       .catch((err) => console.error("Failed to fetch profile details:", err));

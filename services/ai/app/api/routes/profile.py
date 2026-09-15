@@ -91,3 +91,18 @@ async def update_details(
         "success": True,
         "message": "Details saved successfully"
     }
+
+# Add this new route at the bottom of profile.py
+@router.get("/details")
+async def get_details(request: Request, user=Depends(get_current_user)):
+    database = request.app.state.database
+    user_id = ObjectId(str(user.get("_id") or user.get("id")))
+    
+    # Find the user in the database
+    db_user = await database["users"].find_one({"_id": user_id})
+    
+    # Return the saved resume_text if it exists
+    return {
+        "success": True,
+        "resume_text": db_user.get("resume_text", "") if db_user else ""
+    }
