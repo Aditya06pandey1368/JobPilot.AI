@@ -137,6 +137,7 @@ export default function Home() {
     // Clear the saved search when logging out so the next person doesn't see it
     sessionStorage.removeItem("saved_search_query");
     sessionStorage.removeItem("saved_search_results");
+    sessionStorage.clear();
     router.replace("/login");
   };
 

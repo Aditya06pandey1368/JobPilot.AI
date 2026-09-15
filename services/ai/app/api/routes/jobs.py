@@ -554,7 +554,6 @@ async def generate_interview_prep(
     application_id: str,
     user=Depends(get_current_user),
 ):
-    # Native Groq Import
     from langchain_groq import ChatGroq
     from langchain_core.prompts import ChatPromptTemplate
     import os
@@ -566,7 +565,7 @@ async def generate_interview_prep(
         
         database = request.app.state.database
         
-        # Fetch the saved application
+        # 1. Fetch the saved application
         application = await get_application(
             database, 
             user["_id"], 
@@ -576,20 +575,59 @@ async def generate_interview_prep(
         if not application:
             raise HTTPException(status_code=404, detail="Application not found")
 
+        # 2. NEW: Fetch the user's Master Resume from the database
+        db_user = await database["users"].find_one({"_id": user["_id"]})
+        resume_text = db_user.get("resume_text", "") if db_user else ""
+
         # Extract job details safely
         job_title = application.get("job", {}).get("title", "the role")
         job_desc = application.get("job", {}).get("description", "")
         
-        # Initialize Groq natively with a valid Groq model
+        # Initialize Groq 
+        # (Note: make sure you use a valid Groq model here, like "llama3-70b-8192" or "mixtral-8x7b-32768")
         llm = ChatGroq(
             api_key=os.getenv("GROQ_API_KEY"),
-            model="openai/gpt-oss-120b",
+            model="openai/gpt-oss-120b", 
         )
         
-        # Build the prompt
+        # 3. NEW: The highly detailed prompt instructing strict formatting and resume alignment
+        system_prompt = """You are an expert Technical Recruiter and Interview Coach.
+Your task is to generate a highly personalized interview guide based on the provided Job Description and the Candidate's Resume.
+
+CRITICAL FORMATTING RULES:
+1. NO ASTERISKS ALLOWED: Do NOT use any asterisks (*) or markdown bold/italics symbols anywhere in your response. 
+2. PLAIN TEXT HEADERS: Use clean uppercase text or dashes for section titles instead of markdown.
+3. QUESTION ALIGNMENT: Questions must be directly tied to the core technical and business requirements in the Job Description.
+4. ANSWER ALIGNMENT: The strategy MUST explicitly reference the candidate's actual past experiences, projects, or tools from their Resume.
+5. DETAIL LEVEL: Provide a detailed, 3-to-4 sentence answer strategy using the STAR method (Situation, Task, Action, Result).
+
+STRICT LAYOUT TO FOLLOW:
+
+TECHNICAL QUESTION 1
+Question: [Insert specific technical question based on the JD]
+Suggested Answer Strategy: [Write a detailed 3-4 sentence strategy using the candidate's specific resume experience.]
+
+TECHNICAL QUESTION 2
+Question: [Insert specific technical question based on the JD]
+Suggested Answer Strategy: [Write a detailed 3-4 sentence strategy using the candidate's specific resume experience.]
+
+TECHNICAL QUESTION 3
+Question: [Insert specific technical question based on the JD]
+Suggested Answer Strategy: [Write a detailed 3-4 sentence strategy using the candidate's specific resume experience.]
+
+BEHAVIORAL QUESTION 1
+Question: [Insert specific behavioral question based on the JD's soft skills]
+Suggested Answer Strategy: [Write a detailed 3-4 sentence strategy mapping a past scenario from the resume to this question.]
+
+BEHAVIORAL QUESTION 2
+Question: [Insert specific behavioral question based on the JD's soft skills]
+Suggested Answer Strategy: [Write a detailed 3-4 sentence strategy mapping a past scenario from the resume to this question.]
+"""
+
+        # Build the prompt injecting the JD AND the Resume
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an expert technical recruiter and interview coach. Generate 5 highly tailored interview questions (3 technical, 2 behavioral) based on the job description. Format cleanly with the Question in bold, and a brief 'Tip on how to answer' below it. Keep it concise. No intro/outro text."),
-            ("human", f"Role: {job_title}\nJob Description: {job_desc}")
+            ("system", system_prompt),
+            ("human", f"Role: {job_title}\n\nJob Description: {job_desc}\n\nCandidate Resume: {resume_text}")
         ])
         
         # Execute the chain
@@ -605,7 +643,6 @@ async def generate_interview_prep(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(error))
-
     
 
 # ============================================================

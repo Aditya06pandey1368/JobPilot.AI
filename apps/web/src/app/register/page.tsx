@@ -29,13 +29,15 @@ export default function Register() {
     setIsLoading(true);
     setError("");
     try {
+      // FIX: Wipe any leftover session cache from a previous account first
+      sessionStorage.clear();
+      
       const data = await fetchAPI("/auth/register", {
         method: "POST",
         body: JSON.stringify({ name, email, password }),
       });
       localStorage.setItem("token", data.access_token);
       
-      // FIX: Use replace instead of push
       router.replace("/");
     } catch (err: any) {
       setError(err.message);

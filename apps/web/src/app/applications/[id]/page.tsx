@@ -17,6 +17,9 @@ export default function ApplicationDetailsPage() {
   const [prepLoading, setPrepLoading] = useState(false);
   const [prepData, setPrepData] = useState<string | null>(null);
 
+  // NEW: State to track checked checklist items per application
+  const [checkedItems, setCheckedItems] = useState<{ [key: number]: boolean }>({});
+
   useEffect(() => {
     fetchAPI(`/jobs/applications/${appId}`)
       .then((res) => {
@@ -38,12 +41,29 @@ export default function ApplicationDetailsPage() {
           : rawLetter?.content || rawLetter?.body || rawLetter?.letter || "No cover letter generated.";
         setCoverLetterContent(extractedText);
         setLoading(false);
+
+        // Load saved checklist state from localStorage for this specific application
+        const savedChecklist = localStorage.getItem(`checklist_${appId}`);
+        if (savedChecklist) {
+          try {
+            setCheckedItems(JSON.parse(savedChecklist));
+          } catch (e) {
+            console.error("Failed to parse checklist storage");
+          }
+        }
       })
       .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
   }, [appId]);
+
+  // Handle toggling checklist items and persisting to localStorage
+  const handleChecklistToggle = (index: number) => {
+    const updated = { ...checkedItems, [index]: !checkedItems[index] };
+    setCheckedItems(updated);
+    localStorage.setItem(`checklist_${appId}`, JSON.stringify(updated));
+  };
 
   const generateInterviewPrep = async () => {
     setPrepLoading(true);
@@ -188,12 +208,23 @@ export default function ApplicationDetailsPage() {
                   <span className="text-indigo-500">☑</span> Pre-Application Checklist
                 </h2>
                 <ul className="space-y-4">
-                  {checklistItems.map((item: string, i: number) => (
-                    <li key={i} className="flex items-start gap-4 text-slate-700 font-medium group">
-                      <div className="mt-1 w-5 h-5 rounded border-2 border-indigo-200 group-hover:border-indigo-500 group-hover:bg-indigo-50 flex items-center justify-center transition-colors"></div>
-                      <span className="flex-1 group-hover:text-indigo-900 transition-colors">{item}</span>
-                    </li>
-                  ))}
+                  {checklistItems.map((item: string, i: number) => {
+                    const isChecked = !!checkedItems[i];
+                    return (
+                      <li 
+                        key={i} 
+                        onClick={() => handleChecklistToggle(i)}
+                        className="flex items-start gap-4 text-slate-700 font-medium group cursor-pointer select-none"
+                      >
+                        <div className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-indigo-200 group-hover:border-indigo-500 group-hover:bg-indigo-50'}`}>
+                          {isChecked && <span className="text-xs font-bold">✓</span>}
+                        </div>
+                        <span className={`flex-1 transition-colors ${isChecked ? 'line-through text-slate-400' : 'group-hover:text-indigo-900'}`}>
+                          {item}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
