@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "AI Job Assistant & Auto-Fill",
-  "version": "1.0",
-  "description": "Analyze jobs and safely autofill applications on LinkedIn, Indeed, and Naukri.",
+  "name": "JobPilot.AI Copilot",
+  "version": "2.0",
+  "description": "Analyze jobs, generate cover letters, and track applications directly from your browser.",
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "sidePanel"
   ],
   "host_permissions": [
     "http://localhost:8000/*",
@@ -14,18 +15,21 @@
     "https://*.indeed.com/*",
     "https://*.naukri.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "AI Job Assistant"
+    "default_title": "Open JobPilot Copilot"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   },
   "content_scripts": [
     {
       "matches": [
         "*://*.linkedin.com/*",
         "*://*.indeed.com/*",
-        "*://*.naukri.com/*",
-        "*://*.greenhouse.io/*",
-        "*://*.lever.co/*"
+        "*://*.naukri.com/*"
       ],
       "js": ["content.js"]
     }

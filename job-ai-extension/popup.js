@@ -10,6 +10,33 @@ const resultsCard = document.getElementById("resultsCard");
 const trustSection = document.getElementById("trustSection");
 const fitSection = document.getElementById("fitSection");
 
+// COPY BUTTONS
+document.getElementById("copyCoverBtn").addEventListener("click", function() {
+  const text = document.getElementById("coverLetterBox").innerText;
+  navigator.clipboard.writeText(text);
+  this.innerText = "✓ Copied!";
+  this.style.background = "#10b981";
+  this.style.color = "white";
+  setTimeout(() => {
+    this.innerText = "📋 Copy";
+    this.style.background = "white";
+    this.style.color = "#0f172a";
+  }, 2000);
+});
+
+document.getElementById("copyResumeBtn").addEventListener("click", function() {
+  const text = document.getElementById("tailoredResumeBox").innerText;
+  navigator.clipboard.writeText(text);
+  this.innerText = "✓ Copied!";
+  this.style.background = "#10b981";
+  this.style.color = "white";
+  setTimeout(() => {
+    this.innerText = "📋 Copy";
+    this.style.background = "white";
+    this.style.color = "#0f172a";
+  }, 2000);
+});
+
 // Load saved JWT token on popup open
 chrome.storage.local.get(["authToken"], (res) => {
   if (res.authToken) {
@@ -20,7 +47,7 @@ chrome.storage.local.get(["authToken"], (res) => {
 saveTokenBtn.addEventListener("click", () => {
   const token = jwtInput.value.trim();
   chrome.storage.local.set({ authToken: token }, () => {
-    showStatus("Token saved successfully!", "status-success");
+    showStatus("Token connected securely!", "status-success");
   });
 });
 
@@ -38,7 +65,6 @@ function getStoredToken() {
   });
 }
 
-// Helper to scrape current tab page details
 function getScrapedPageData() {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -57,15 +83,15 @@ function getScrapedPageData() {
   });
 }
 
-// 1. Analyze Company & Job Trust (No resume)
+// 1. Analyze Company & Job Trust
 analyzeJobBtn.addEventListener("click", async () => {
   const token = await getStoredToken();
   if (!token) {
-    showStatus("Please save your backend JWT token first.", "status-error");
+    showStatus("Please connect your JWT token first.", "status-error");
     return;
   }
 
-  showStatus("Evaluating company legitimacy & trust...", "status-info");
+  showStatus("Evaluating company legitimacy...", "status-info");
   analyzeJobBtn.disabled = true;
 
   try {
@@ -91,15 +117,15 @@ analyzeJobBtn.addEventListener("click", async () => {
   }
 });
 
-// 2. Analyze Resume Fit (12-point semantic match)
+// 2. Analyze Resume Fit 
 analyzeFitBtn.addEventListener("click", async () => {
   const token = await getStoredToken();
   if (!token) {
-    showStatus("Please save your backend JWT token first.", "status-error");
+    showStatus("Please connect your JWT token first.", "status-error");
     return;
   }
 
-  showStatus("Comparing job description against your resume...", "status-info");
+  showStatus("Generating AI application materials...", "status-info");
   analyzeFitBtn.disabled = true;
 
   try {
@@ -117,7 +143,7 @@ analyzeFitBtn.addEventListener("click", async () => {
     const data = await res.json();
     
     displayResumeFitResults(data);
-    showStatus("Resume match analysis complete!", "status-success");
+    showStatus("Materials generated successfully!", "status-success");
   } catch (err) {
     showStatus(`Analysis failed: ${err.message}`, "status-error");
   } finally {
@@ -136,38 +162,46 @@ function displayJobTrustResults(data) {
   const recommendation = data.company_trust?.recommendation || "Unknown";
   const trustElement = document.getElementById("resTrust");
   
-  trustElement.innerText = `${trustScore}% (${recommendation})`;
-  trustElement.style.color = trustScore >= 75 ? "#059669" : trustScore >= 50 ? "#d97706" : "#dc2626";
+  trustElement.innerText = `${trustScore}% - ${recommendation}`;
+  trustElement.style.background = trustScore >= 75 ? "#ecfdf5" : trustScore >= 50 ? "#fffbeb" : "#fef2f2";
+  trustElement.style.color = trustScore >= 75 ? "#065f46" : trustScore >= 50 ? "#b45309" : "#991b1b";
 
-  // Handle Clickable Links
   const trustData = data.company_trust || {};
+  const linksContainer = document.getElementById("companyLinks");
   
+  let hasLinks = false;
   const webLink = document.getElementById("webLink");
   if (trustData.official_website) {
     webLink.href = trustData.official_website;
     webLink.classList.remove("hidden");
-  } else {
-    webLink.classList.add("hidden");
-  }
+    hasLinks = true;
+  } else webLink.classList.add("hidden");
 
   const careerLink = document.getElementById("careerLink");
   if (trustData.careers_page) {
     careerLink.href = trustData.careers_page;
     careerLink.classList.remove("hidden");
-  } else {
-    careerLink.classList.add("hidden");
-  }
+    hasLinks = true;
+  } else careerLink.classList.add("hidden");
 
   const linkedInLink = document.getElementById("linkedInLink");
   if (trustData.linkedin_url) {
     linkedInLink.href = trustData.linkedin_url;
     linkedInLink.classList.remove("hidden");
-  } else {
-    linkedInLink.classList.add("hidden");
-  }
+    hasLinks = true;
+  } else linkedInLink.classList.add("hidden");
+
+  if (hasLinks) linksContainer.classList.remove("hidden");
+  else linksContainer.classList.add("hidden");
 
   const redFlags = trustData.red_flags || [];
-  document.getElementById("trustFlags").innerText = redFlags.length > 0 ? `Warnings: ${redFlags[0]}` : "No major red flags detected.";
+  const flagsContainer = document.getElementById("trustFlags");
+  if (redFlags.length > 0) {
+    flagsContainer.innerText = `⚠️ Warnings: ${redFlags[0]}`;
+    flagsContainer.classList.remove("hidden");
+  } else {
+    flagsContainer.classList.add("hidden");
+  }
 
   resultsCard.classList.remove("hidden");
 }
@@ -177,10 +211,10 @@ function displayResumeFitResults(data) {
   document.getElementById("resCompany").innerText = data.company || "Unknown Company";
 
   fitSection.classList.remove("hidden");
-  trustSection.classList.add("hidden"); // Hide trust data if showing fit
+  trustSection.classList.add("hidden"); 
 
   const fitScore = data.resume_fit?.overall_fit_score || 0;
-  document.getElementById("resScore").innerText = `${fitScore}%`;
+  document.getElementById("resScore").innerText = `${fitScore}% Match`;
 
   const container = document.getElementById("keywordsList");
   container.innerHTML = "";
@@ -192,36 +226,28 @@ function displayResumeFitResults(data) {
     missingSkills.forEach((kw) => {
       const span = document.createElement("span");
       span.className = "keyword-badge";
-      span.style.backgroundColor = "#fee2e2";
-      span.style.color = "#991b1b";
-      span.innerText = kw;
+      span.innerText = `✗ ${kw}`;
       container.appendChild(span);
     });
   }
 
-  // --- NEW COVER LETTER FORMATTING LOGIC ---
   let rawLetter = data.resume_fit?.cover_letter || "Cover letter generation failed.";
-  
   let formattedLetter = rawLetter
-      .replace(/\\n/g, '<br>')       // Fix explicit escaped \n
-      .replace(/\n/g, '<br>')        // Fix actual newlines
-      .replace(/\\u202f/g, ' ')      // Fix unicode spaces
-      .replace(/\u202f/g, ' ')       // Fix literal unicode spaces
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Fix markdown bolding
+      .replace(/\\n/g, '<br>')
+      .replace(/\n/g, '<br>')
+      .replace(/\\u202f/g, ' ')
+      .replace(/\u202f/g, ' ')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       
-  // Use innerHTML instead of innerText so the HTML tags render correctly
   document.getElementById("coverLetterBox").innerHTML = formattedLetter;
 
   let rawTailored = data.resume_fit?.tailored_resume || "No tailored resume generated.";
-  
-  // Format it assuming it comes back as a list or string
   if (Array.isArray(rawTailored)) {
-      rawTailored = rawTailored.map(bullet => `• ${bullet}`).join('<br>');
+      rawTailored = rawTailored.map(bullet => `• ${bullet}`).join('<br><br>');
   } else {
       rawTailored = String(rawTailored).replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   }
   
   document.getElementById("tailoredResumeBox").innerHTML = rawTailored;
-
   resultsCard.classList.remove("hidden");
 }

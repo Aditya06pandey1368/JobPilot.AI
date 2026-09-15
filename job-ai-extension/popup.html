@@ -3,67 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="popup.css">
-  <title>Job AI Assistant</title>
+  <title>JobPilot Copilot</title>
 </head>
 <body>
   <div class="header">
-    <h3>🤖 Job AI Assistant</h3>
-    <span class="badge">V2.0 Professional</span>
+    <div class="logo">
+      <h3>JobPilot<span class="text-brand">.AI</span></h3>
+      <p class="subtitle">Your browsing copilot</p>
+    </div>
+    <span class="badge">V2.0</span>
   </div>
 
   <!-- Auth Configuration Section -->
   <div class="card auth-section">
-    <label for="jwtToken">Backend JWT Token:</label>
-    <input type="password" id="jwtToken" placeholder="Paste bearer token here" />
-    <button id="saveTokenBtn" class="btn btn-secondary">Save Token</button>
+    <label for="jwtToken">Secure Connection Token</label>
+    <div class="auth-input-group">
+      <input type="password" id="jwtToken" placeholder="Paste your JWT token here..." />
+      <button id="saveTokenBtn" class="btn btn-secondary">Connect</button>
+    </div>
   </div>
 
-  <!-- Primary Actions (Separated) -->
+  <!-- Primary Actions -->
   <div class="actions">
-    <button id="analyzeJobBtn" class="btn btn-primary">🛡️ Analyze Company & Job</button>
-    <button id="analyzeFitBtn" class="btn btn-success">🎯 Check Resume Match & Fit</button>
+    <button id="analyzeJobBtn" class="btn btn-primary">
+      <span class="icon">🛡️</span> Evaluate Company Trust
+    </button>
+    <button id="analyzeFitBtn" class="btn btn-success">
+      <span class="icon">✨</span> Generate AI Application
+    </button>
   </div>
 
   <!-- Status & Feedback Area -->
   <div id="statusMessage" class="status-box hidden"></div>
 
   <!-- Results Section -->
-  <div id="resultsCard" class="card hidden">
-    <h4 id="resTitle">Role Name</h4>
-    <p id="resCompany" class="text-muted">Company</p>
+  <div id="resultsCard" class="card hidden shadow-lg">
+    <div class="job-header">
+      <h4 id="resTitle" class="job-title">Role Name</h4>
+      <p id="resCompany" class="text-muted font-bold">Company</p>
+    </div>
     
     <div id="trustSection" class="hidden">
-      <div class="score-row" style="border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 6px;">
-        <span>🛡️ Company Trust:</span>
-        <strong id="resTrust">0%</strong>
+      <div class="score-row">
+        <span class="label">Company Legitimacy</span>
+        <strong id="resTrust" class="score-pill">0%</strong>
       </div>
       
-      <!-- Clickable Company Links Container -->
-      <div id="companyLinks" class="text-muted" style="font-size: 11px; margin-bottom: 6px; display: flex; gap: 8px;">
+      <div id="companyLinks" class="link-group hidden">
         <a id="webLink" href="#" target="_blank" class="hidden">🌐 Website</a>
         <a id="careerLink" href="#" target="_blank" class="hidden">💼 Careers</a>
         <a id="linkedInLink" href="#" target="_blank" class="hidden">👥 LinkedIn</a>
       </div>
 
-      <div id="trustFlags" class="text-muted" style="font-size: 11px; margin-bottom: 6px;"></div>
+      <div id="trustFlags" class="text-muted flag-box"></div>
     </div>
 
     <div id="fitSection" class="hidden">
       <div class="score-row">
-        <span>🎯 Resume Match:</span>
-        <strong id="resScore">0%</strong>
+        <span class="label">ATS Match Score</span>
+        <strong id="resScore" class="score-pill score-blue">0%</strong>
       </div>
-      <div class="keywords-box">
-        <small>Missing Skills (Gap Analysis):</small>
+      
+      <div class="section-block">
+        <label>Missing Skills (Gap Analysis):</label>
         <div id="keywordsList" class="badges"></div>
       </div>
-      <div class="keywords-box" style="margin-top: 10px;">
-        <small>Agent-Generated Cover Letter:</small>
-        <div id="coverLetterBox" class="text-muted" style="font-size: 11px; max-height: 150px; overflow-y: auto; background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid #e2e8f0; white-space: pre-wrap;"></div>
+      
+      <div class="section-block relative">
+        <div class="flex-between">
+          <label>Agent-Generated Cover Letter:</label>
+          <button id="copyCoverBtn" class="btn-tiny">📋 Copy</button>
+        </div>
+        <div id="coverLetterBox" class="letter-box"></div>
       </div>
-      <div class="keywords-box" style="margin-top: 10px;">
-        <small>Tailored Resume Bullets:</small>
-        <div id="tailoredResumeBox" class="text-muted" style="font-size: 11px; max-height: 150px; overflow-y: auto; background: #f0fdf4; padding: 8px; border-radius: 4px; border: 1px solid #bbf7d0; white-space: pre-wrap;"></div>
+      
+      <div class="section-block relative">
+        <div class="flex-between">
+          <label>Tailored Resume Bullets:</label>
+          <button id="copyResumeBtn" class="btn-tiny">📋 Copy</button>
+        </div>
+        <div id="tailoredResumeBox" class="resume-box"></div>
       </div>
     </div>
   </div>

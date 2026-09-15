@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+// ADDED useEffect to the import
+import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -8,6 +9,14 @@ export default function Login() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // NEW: Instantly redirect if they are already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.replace("/");
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,7 +33,9 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
       localStorage.setItem("token", data.access_token);
-      router.push("/");
+      
+      // FIX: Use replace instead of push so the back button doesn't trap them
+      router.replace("/"); 
     } catch (err: any) {
       setError(err.message);
       setIsLoading(false);

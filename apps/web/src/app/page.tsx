@@ -21,16 +21,31 @@ export default function Home() {
       .then((data) => setUser(data))
       .catch(() => router.push("/login"));
 
-    // 2. Fetch the permanently saved resume details from our NEW backend route
+    // 2. Fetch the permanently saved resume details from the database
     fetchAPI("/profile/details")
       .then((data) => {
         if (data.resume_text) {
           setResumeText(data.resume_text);
-          // Keep session storage synced just in case other components need it quickly
           sessionStorage.setItem("current_resume", data.resume_text);
+        } else {
+          const savedResume = sessionStorage.getItem("current_resume");
+          if (savedResume) setResumeText(savedResume);
         }
       })
       .catch((err) => console.error("Failed to fetch profile details:", err));
+
+    // NEW: 3. Restore previous search state if coming back to this page
+    const savedQuery = sessionStorage.getItem("saved_search_query");
+    if (savedQuery) setQuery(savedQuery);
+
+    const savedJobs = sessionStorage.getItem("saved_search_results");
+    if (savedJobs) {
+      try {
+        setJobs(JSON.parse(savedJobs));
+      } catch (e) {
+        console.error("Failed to parse saved jobs");
+      }
+    }
       
   }, [router]);
 
@@ -94,13 +109,22 @@ export default function Home() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Save current state to session storage
     sessionStorage.setItem("current_resume", resumeText);
+    sessionStorage.setItem("saved_search_query", query);
+
     try {
       const data = await fetchAPI("/jobs/search", {
         method: "POST",
         body: JSON.stringify({ query, resume_text: resumeText }),
       });
-      setJobs(data.jobs || []);
+      const fetchedJobs = data.jobs || [];
+      setJobs(fetchedJobs);
+      
+      // NEW: Save the actual job results so they survive a back-button press
+      sessionStorage.setItem("saved_search_results", JSON.stringify(fetchedJobs));
+      
     } catch (err: any) {
       alert(`Search failed: ${err.message}`);
     } finally {
@@ -110,7 +134,10 @@ export default function Home() {
 
   const logout = () => {
     localStorage.removeItem("token");
-    router.push("/login");
+    // Clear the saved search when logging out so the next person doesn't see it
+    sessionStorage.removeItem("saved_search_query");
+    sessionStorage.removeItem("saved_search_results");
+    router.replace("/login");
   };
 
   if (!user) return (
@@ -130,7 +157,11 @@ export default function Home() {
             </h1>
             <p className="text-indigo-200 font-medium text-lg">Let's find your next big opportunity.</p>
           </div>
-          <div className="flex gap-4">
+          
+          <div className="flex flex-wrap gap-4">
+            <Link href="/extension" className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-white/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+              <span>🧩</span> Extension
+            </Link>
             <Link href="/applications" className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-white/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
               <span>📋</span> Tracker
             </Link>
