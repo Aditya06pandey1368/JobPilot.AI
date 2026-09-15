@@ -16,12 +16,25 @@ export default function Home() {
   const [jobs, setJobs] = useState<any[]>([]);
 
   useEffect(() => {
+    // 1. Fetch user authentication
     fetchAPI("/auth/me")
       .then((data) => setUser(data))
       .catch(() => router.push("/login"));
 
-    const savedResume = sessionStorage.getItem("current_resume");
-    if (savedResume) setResumeText(savedResume);
+    // 2. Fetch the permanently saved resume details from the database
+    fetchAPI("/jobs/profile")
+      .then((data) => {
+        if (data.resume_text) {
+          setResumeText(data.resume_text);
+          sessionStorage.setItem("current_resume", data.resume_text);
+        } else {
+          // Fallback to session storage only if database is empty
+          const savedResume = sessionStorage.getItem("current_resume");
+          if (savedResume) setResumeText(savedResume);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch profile details:", err));
+      
   }, [router]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
