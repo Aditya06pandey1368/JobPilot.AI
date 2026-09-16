@@ -10,7 +10,7 @@
     "sidePanel"
   ],
   "host_permissions": [
-    "http://localhost:8000/*",
+    "https://jobpilot-ai-7cqs.onrender.com/*",
     "https://*.linkedin.com/*",
     "https://*.indeed.com/*",
     "https://*.naukri.com/*"
