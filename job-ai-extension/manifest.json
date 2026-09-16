@@ -10,7 +10,7 @@
     "sidePanel"
   ],
   "host_permissions": [
-    "https://jobpilot-ai-7cqs.onrender.com/*",
+    "https://jobpilot-ai-7cqs.onrender.com/api*",
     "https://*.linkedin.com/*",
     "https://*.indeed.com/*",
     "https://*.naukri.com/*"

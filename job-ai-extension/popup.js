@@ -1,4 +1,4 @@
-const API_BASE = "https://jobpilot-ai-7cqs.onrender.com";
+const API_BASE = "https://jobpilot-ai-7cqs.onrender.com/api";
 
 const jwtInput = document.getElementById("jwtToken");
 const saveTokenBtn = document.getElementById("saveTokenBtn");
