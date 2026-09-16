@@ -1,5 +1,4 @@
 from typing import Literal
-
 from pydantic import BaseModel, Field
 
 class JobSearchIntent(BaseModel):
@@ -30,4 +29,9 @@ class JobSearchIntent(BaseModel):
         ge=1,
         le=30,
         description="Maximum age of jobs in days."
+    )
+    
+    target_company: str | None = Field(
+        default=None,
+        description="Specific company name if the user asks to search a particular company's job board (e.g., 'Airbnb', 'Stripe')."
     )

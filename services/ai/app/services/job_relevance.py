@@ -21,7 +21,7 @@ relevance_model = model.with_structured_output(
 )
 
 
-BATCH_SIZE = 2
+BATCH_SIZE = 3
 
 
 def analyze_job_relevance(
@@ -35,7 +35,7 @@ def analyze_job_relevance(
     all_analyzed_jobs = []
 
     # RATE LIMIT FIX 1: Cap the jobs we evaluate to 15 to prevent massive API spam
-    jobs_to_evaluate = jobs[:4]
+    jobs_to_evaluate = jobs[:15]
 
     # Process jobs in small batches
     for i in range(

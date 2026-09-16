@@ -50,33 +50,19 @@ async def search_greenhouse_jobs(
     intent: JobSearchIntent,
 ) -> list[Job]:
 
-    tasks = [
-        fetch_greenhouse_board(
+    # If the user didn't ask for a specific company, skip Greenhouse
+    if not intent.target_company:
+        return []
+
+    # Convert "Airbnb" to "airbnb" (Greenhouse tokens are usually lowercase/no spaces)
+    board_token = intent.target_company.lower().replace(" ", "")
+    
+    try:
+        jobs = await fetch_greenhouse_board(
             board_token=board_token,
-            company_name=company,
+            company_name=intent.target_company,
         )
-        for company, board_token
-        in GREENHOUSE_BOARDS.items()
-    ]
-
-    results = await asyncio.gather(
-        *tasks,
-        return_exceptions=True,
-    )
-
-    jobs: list[Job] = []
-
-    for result in results:
-        if isinstance(result, Exception):
-            continue
-
-        jobs.extend(result)
-
-    return jobs
-
-GREENHOUSE_BOARDS = {
-    "6sense": "6sense",
-    "Zinnia": "zinnia",
-    "Tide": "tide",
-    "Turing": "turing",
-}
+        return jobs
+    except Exception as e:
+        print(f"Failed to fetch Greenhouse board for {board_token}: {e}")
+        return []
