@@ -19,7 +19,10 @@ export default function Home() {
     // 1. Fetch user authentication
     fetchAPI("/auth/me")
       .then((data) => setUser(data))
-      .catch(() => router.push("/login"));
+      .catch(() => {
+        localStorage.removeItem("token");
+        router.push("/login");
+      });
 
     // 2. Fetch the permanently saved resume details from the database
     fetchAPI("/profile/details")
