@@ -9,6 +9,10 @@
 
 ---
 
+https://github.com/user-attachments/assets/c055897b-650a-4f77-a10b-17624b42e17a
+
+---
+
 ## ✨ System Architecture & Core Features
 
 Unlike standard job boards, JobPilot AI utilizes a multi-step verification pipeline to prevent AI hallucinations and guarantee relevance.
